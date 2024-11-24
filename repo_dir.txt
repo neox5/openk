@@ -1,0 +1,26 @@
+.
+├── docs
+│   ├── adr
+│   │   ├── core
+│   │   │   ├── 001_screte-field-format.md
+│   │   │   ├── 002_secret-management-model.md
+│   │   │   ├── 003_secret-input--processing.md
+│   │   │   └── 004_service_architecture.md
+│   │   ├── crypto
+│   │   │   ├── 005_encryption_architecture.md
+│   │   │   ├── 007_org_secret_management.md
+│   │   │   └── 008_personal_vault_management.md
+│   │   └── privacy
+│   │       └── 006_privacy-preserving_metadata.md
+│   ├── models
+│   │   └── crypto-models.md
+│   ├── specs
+│   │   └── crypto
+│   │       └── crypto-spec.md
+│   └── project_description.md
+├── internal
+├── go.mod
+├── go.sum
+├── LICENSE
+├── README.md
+└── repo_dir.txt
