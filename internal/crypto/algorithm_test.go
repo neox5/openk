@@ -36,38 +36,3 @@ func TestAlgorithm_String(t *testing.T) {
 		})
 	}
 }
-
-func TestAlgorithm_Valid(t *testing.T) {
-	tests := []struct {
-		name string
-		alg  crypto.Algorithm
-		want bool
-	}{
-		{
-			name: "RSA OAEP SHA256 is valid",
-			alg:  crypto.AlgorithmRSAOAEPSHA256,
-			want: true,
-		},
-		{
-			name: "AES GCM 256 is valid",
-			alg:  crypto.AlgorithmAESGCM256,
-			want: true,
-		},
-		{
-			name: "Unknown algorithm is invalid",
-			alg:  crypto.Algorithm(999),
-			want: false,
-		},
-		{
-			name: "Negative algorithm is invalid",
-			alg:  crypto.Algorithm(-1),
-			want: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, tt.alg.Valid())
-		})
-	}
-}

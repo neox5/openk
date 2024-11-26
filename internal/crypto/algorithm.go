@@ -24,13 +24,3 @@ func (a Algorithm) String() string {
 		return "UNKNOWN"
 	}
 }
-
-// Valid returns true if the Algorithm is a known value
-func (a Algorithm) Valid() bool {
-	switch a {
-	case AlgorithmRSAOAEPSHA256, AlgorithmAESGCM256:
-		return true
-	default:
-		return false
-	}
-}
