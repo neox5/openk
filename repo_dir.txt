@@ -12,15 +12,26 @@
 │   │   │   └── 008_personal_vault_management.md
 │   │   └── privacy
 │   │       └── 006_privacy-preserving_metadata.md
+│   ├── misc
+│   │   └── openk-banner.md
 │   ├── models
 │   │   └── crypto-models.md
 │   ├── specs
 │   │   └── crypto
 │   │       └── crypto-spec.md
-│   └── project_description.md
+│   ├── project_description.md
+│   └── TESTING.md
 ├── internal
+│   ├── crypto
+│   │   ├── algorithm.go
+│   │   ├── algorithm_test.go
+│   │   ├── key_state.go
+│   │   └── key_state_test.go
+│   ├── secret
+│   └── storage
 ├── go.mod
 ├── go.sum
 ├── LICENSE
+├── openk-todo.md
 ├── README.md
 └── repo_dir.txt

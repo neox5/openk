@@ -1,6 +1,14 @@
 # OpenK Implementation Todo List
 
 ## 1. Core Cryptographic Foundation
+- [x] Implement core algorithm types
+  - [x] Define supported algorithms (RSA-OAEP-SHA256, AES-GCM-256)
+  - [x] Add string representations
+  - [x] Create unit tests
+- [x] Implement key state management
+  - [x] Define key states (Active, PendingRotation, Inactive, Destroyed)
+  - [x] Add state transitions
+  - [x] Create unit tests
 - [ ] Implement core crypto structures
   - [ ] KeyPair (RSA-2048-OAEP)
     - [ ] Key generation
@@ -14,10 +22,6 @@
     - [ ] Creation
     - [ ] Wrapping/unwrapping
     - [ ] Recipient management
-- [ ] Key state management
-  - [ ] Implement state transitions
-  - [ ] State validation
-  - [ ] Rotation mechanisms
 - [ ] Memory protection
   - [ ] Secure memory wiping
   - [ ] Memory encryption when available
@@ -125,7 +129,7 @@
 
 ## Continuous Tasks
 - [ ] Testing
-  - [ ] Unit tests
+  - [x] Unit tests for core types
   - [ ] Integration tests
   - [ ] Security tests
 - [ ] Documentation
@@ -136,3 +140,9 @@
   - [ ] Code reviews
   - [ ] Penetration testing
   - [ ] Compliance checking
+
+## Notes on Progress
+- Completed implementation of core Algorithm type with RSA-OAEP-SHA256 and AES-GCM-256 support
+- Completed implementation of KeyState with all required states and transitions
+- Added comprehensive unit tests for both Algorithm and KeyState
+- Next focus should be on implementing the core crypto structures (KeyPair, DEK, Envelope)
