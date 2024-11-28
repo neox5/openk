@@ -9,8 +9,14 @@
   - [x] Define key states (Active, PendingRotation, Inactive, Destroyed)
   - [x] Add state transitions
   - [x] Create unit tests
+- [x] Implement core Ciphertext structure
+  - [x] Define structure with Nonce, Data, and Tag
+  - [x] Add validation in constructor
+  - [x] Handle empty data case
+  - [x] Create unit tests
 - [ ] Implement core crypto structures
   - [ ] KeyPair (RSA-2048-OAEP)
+    - [ ] Define structure using Ciphertext
     - [ ] Key generation
     - [ ] Key wrapping
     - [ ] Export/import functions
@@ -129,7 +135,7 @@
 
 ## Continuous Tasks
 - [ ] Testing
-  - [x] Unit tests for core types
+  - [x] Unit tests for core types (Algorithm, KeyState, Ciphertext)
   - [ ] Integration tests
   - [ ] Security tests
 - [ ] Documentation
@@ -144,5 +150,6 @@
 ## Notes on Progress
 - Completed implementation of core Algorithm type with RSA-OAEP-SHA256 and AES-GCM-256 support
 - Completed implementation of KeyState with all required states and transitions
-- Added comprehensive unit tests for both Algorithm and KeyState
-- Next focus should be on implementing the core crypto structures (KeyPair, DEK, Envelope)
+- Completed implementation of Ciphertext structure for encrypted data storage
+- Added comprehensive unit tests for all completed components
+- Next focus should be on implementing the KeyPair structure, as it will be the first consumer of our Ciphertext type
