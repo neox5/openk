@@ -1,134 +1,177 @@
 # ADR-007: Organization Secret Management
 
 ## Status
-Proposed
+Revised (supersedes original version)
 
 ## Context
-Following our encryption architecture (ADR-005) and privacy-preserving metadata model (ADR-006), we need to define how organization secrets (org_secret) are managed. The org_secret is crucial for HMAC generation and must be available to all authorized members while maintaining our end-to-end encryption guarantees.
+Following our revised encryption architecture (ADR-005) and key derivation model (ADR-009), we need to define how organization secrets (org_secret) are managed. The org_secret is crucial for HMAC generation and must be available to all authorized members while maintaining our end-to-end encryption guarantees.
 
 ## Decision
 
-### 1. Org Secret Implementation
+### 1. Organization Identity
 
-#### 1.1 Core Structure
-The org_secret is implemented using the DEK structure defined in crypto-spec.md, ensuring:
-- Uniform cryptographic properties
-- Consistent state management
-- Standard envelope encryption for member access
-- Proper key rotation support
-
-Refer to crypto-spec.md section "DEK (Data Encryption Key)" for detailed structure and requirements.
+#### 1.1 Organization KeyPair
+The organization's identity is represented by a long-term KeyPair:
+- Follows crypto-spec KeyPair structure
+- Serves as trust anchor for organization
+- Protected by organization KEK(s)
+- Subject to revocation, not rotation
 
 #### 1.2 Access Management
-Each member's access to the org_secret is managed through the Envelope structure defined in crypto-spec.md, providing:
-- Individual access control
-- Safe key distribution
-- Member-specific revocation
+Each member's access is managed through:
+- Individual Envelope for org_secret
+- Member's KeyPair for verification
+- Clear access records
 - Audit capabilities
 
-### 2. Access Patterns
+### 2. Key Protection
 
-#### 2.1 Initial Organization Setup
-1. Generate new DEK for org_secret following crypto-spec requirements
-2. Set initial key state to KeyStateActive
-3. Create envelope for admin (organization creator) using their public key
-4. Store encrypted org_secret and envelope
+#### 2.1 Organization KEK Management
+```go
+type OrgKEKManager interface {
+    // CreateKEK generates or imports a new KEK
+    CreateKEK(params interface{}) (*KEK, error)
+    
+    // GetActiveKEKs returns all active KEKs
+    GetActiveKEKs() ([]*KEK, error)
+    
+    // RotateKEK initiates KEK rotation
+    RotateKEK(kekID string) error
+    
+    // EmergencyRotate performs immediate KEK rotation
+    EmergencyRotate() (*KEK, error)
+}
+```
 
-#### 2.2 Member Access
-1. Member retrieves their org_secret envelope
-2. Uses their KeyPair (per crypto-spec) to decrypt the envelope
-3. Maintains decrypted org_secret in memory following crypto-spec memory handling requirements
-4. Uses for HMAC operations as needed
+#### 2.2 KEK Policies
+- Multiple active KEKs supported
+- Clear rotation schedule
+- Emergency rotation procedures
+- Audit requirements
 
-### 3. Member Management
+### 3. Access Patterns
 
-#### 3.1 Adding Members
-1. Admin retrieves and decrypts org_secret using their envelope
-2. Creates new envelope for new member following crypto-spec Envelope structure:
-   - Uses member's public key
-   - Follows envelope creation requirements
-   - Sets appropriate key state
-3. Stores new envelope with appropriate member references
+#### 3.1 Initial Organization Setup
+1. Generate organization KeyPair
+2. Create initial organization KEK
+3. Protect organization private key
+4. Generate initial org_secret (DEK)
+5. Create admin envelope
 
-#### 3.2 Removing Members
-1. Remove member's envelope
-2. If high-security context requires:
-   - Trigger org_secret rotation (see Section 4)
-   - Member can't decrypt new org_secret
-3. Update access records
+#### 3.2 Member Access
+1. Member authenticates via Master Key
+2. System verifies member's KeyPair
+3. Member receives their org_secret envelope
+4. Member maintains org_secret in memory
+5. Used for HMAC operations as needed
 
-### 4. Key Rotation
+### 4. Member Management
 
-#### 4.1 Rotation Triggers
-* Regularly scheduled rotation
-* Member removal (when required)
-* Security incident response
-* Compliance requirements
+#### 4.1 Adding Members
+```go
+type MemberAccess struct {
+    MemberID     string
+    KeyPairID    string    // Member's KeyPair ID
+    EnvelopeID   string    // org_secret envelope
+    AccessLevel  string    // e.g., "Admin", "Member"
+    CreatedAt    time.Time
+    RevokedAt    *time.Time
+}
+```
 
-#### 4.2 Rotation Process
-Following crypto-spec key state transitions:
-1. Generate new DEK for org_secret
-2. Set new key to KeyStateActive
-3. Set old key to KeyStatePendingRotation
-4. Create new envelopes for all current members
-5. Re-compute affected HMACs
-6. Update stored HMACs atomically
-7. Set old key to KeyStateInactive
+Process:
+1. Verify member's KeyPair
+2. Create new envelope for org_secret
+3. Record access grant
+4. Enable member operations
 
-### 5. Recovery Scenarios
+#### 4.2 Removing Members
+1. Revoke member's envelope
+2. Record access revocation
+3. If required by policy:
+   - Rotate org_secret
+   - Create new envelopes for remaining members
+   - Update affected HMACs
 
-#### 5.1 Standard Recovery
-* Requires at least one admin with access
-* Admin can:
-  - Generate new envelopes
-  - Grant access to new members
-  - Re-establish access patterns
+### 5. Security Controls
 
-#### 5.2 Disaster Recovery
-* Multiple admin requirement recommended
-* Optional backup procedures for large organizations
-* All recovery must maintain crypto-spec security properties
+#### 5.1 Access Enforcement
+```go
+type AccessControl interface {
+    // VerifyAccess checks member's access rights
+    VerifyAccess(memberID string, operation string) error
+    
+    // RecordAccess logs access attempts
+    RecordAccess(memberID string, operation string, granted bool)
+    
+    // GetAccessHistory retrieves access logs
+    GetAccessHistory(filter AccessFilter) ([]*AccessLog, error)
+}
+```
 
-### 6. Implementation Requirements
+#### 5.2 Audit Requirements
+- Access grant/revocation
+- KEK rotation events
+- org_secret usage
+- Operation timestamps
+- Access attempts
 
-#### 6.1 Memory Protection
-Must follow crypto-spec memory handling requirements:
-* Keep org_secret in memory only
-* Clear on session end/vault lock
-* No disk caching
-* Use memory encryption when available
+### 6. Emergency Procedures
 
-#### 6.2 Error Handling
-Follow crypto-spec error handling requirements:
-* Handle decryption failures appropriately
-* Detect missing/invalid envelopes
-* Handle invalid HMAC computation
-* Manage rotation failures
-* Provide appropriate error responses
+#### 6.1 Key Compromise Response
+1. Immediate KEK rotation
+2. New org_secret generation
+3. New envelopes for all members
+4. HMAC recomputation
+5. Incident recording
+
+#### 6.2 Recovery Procedures
+- Minimum admin requirement
+- Backup key procedures
+- Recovery validation
+- Audit trail maintenance
+
+### 7. Implementation Requirements
+
+#### 7.1 Memory Protection
+Following crypto-spec requirements:
+- org_secret in memory only
+- Clear on session end
+- No disk caching
+- Memory encryption when available
+
+#### 7.2 Error Handling
+- Cryptographic operation errors
+- Access control violations
+- State transition failures
+- Clear error responses
 
 ## Consequences
 
 ### Positive
-* Consistent with crypto-spec structures
-* Same key rotation mechanisms
-* Clear member management process
-* Unified backup/restore procedures
-* Strong security guarantees
+- Clear identity model
+- Flexible key protection
+- Strong access controls
+- Emergency procedures
+- Comprehensive audit
+- Multiple KEK support
 
 ### Negative
-* System-wide updates during rotation
-* Performance impact during rotation
-* Complex recovery scenarios
-* Critical for system operation
+- Complex key management
+- Multiple state tracking
+- Performance implications
+- Recovery complexity
 
 ## Notes
-* Monitor performance metrics during rotation
-* Document recovery procedures
-* Define minimum number of required admins
-* Consider caching strategies for HMAC operations
-* Plan for bulk HMAC updates during rotation
+- Define minimum admin count
+- Document recovery procedures
+- Monitor HMAC performance
+- Regular security reviews
+- Maintain clear procedures
+- Consider backup strategies
 
 ## References
-* crypto-spec.md - Core cryptographic specifications and structures
-* ADR-005 - Encryption architecture
-* ADR-006 - Privacy-preserving metadata model
+- crypto-spec.md: Core cryptographic specifications
+- ADR-005: Revised encryption architecture
+- ADR-009: Key derivation architecture
+- NIST SP 800-57: Key management guidelines

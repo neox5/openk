@@ -4,17 +4,24 @@ This document defines the domain and storage models based on crypto-spec.md.
 
 ## Domain Models
 
+### Core Types
 ```go
-// Core cryptographic types as defined in crypto-spec.md
 type KeyState int
 type Algorithm int
+
+// Ciphertext represents encrypted data with authentication
+type Ciphertext struct {
+    Nonce []byte // 96 bits
+    Data  []byte // Encrypted data
+    Tag   []byte // 128 bits
+}
 
 // KeyPair represents an asymmetric RSA key pair used for key wrapping
 type KeyPair struct {
     ID        string     
     Algorithm Algorithm  // AlgorithmRSAOAEPSHA256
     PublicKey []byte     // X.509/SPKI format
-    Private   Ciphertext // Encrypted with KEK derived from user credentials
+    Private   Ciphertext // Encrypted with KEK
     Created   time.Time
     State     KeyState   
 }
@@ -23,7 +30,7 @@ type KeyPair struct {
 type DEK struct {
     ID        string    
     Algorithm Algorithm // AlgorithmAESGCM256
-    Key       []byte    // In memory only, wrapped by KeyPair for distribution
+    Key       []byte    // In memory only, wrapped by KeyPair
     Created   time.Time
     State     KeyState  
 }
@@ -36,6 +43,20 @@ type Envelope struct {
     Created   time.Time
     State     KeyState  
     OwnerID   string    // References recipient's KeyPair.ID
+}
+
+// KeyDerivation represents parameters for Master Key derivation
+type KeyDerivation struct {
+    Salt          []byte    // 128-bit random salt
+    Iterations    int       // PBKDF2 iteration count
+    MasterKeySize int       // 256 bits
+}
+
+// HKDFParams represents parameters for KEK derivation
+type HKDFParams struct {
+    Salt     []byte // Optional, 256 bits if used
+    Info     []byte // "OpenK-KEK-v1"
+    KeySize  int    // 256 bits
 }
 ```
 
@@ -51,6 +72,16 @@ COMMENT ON TYPE crypto_algorithm IS 'Algorithm: 0=RSA-2048-OAEP-SHA256, 1=AES-25
 -- Key states using numeric values from crypto-spec.md
 CREATE TYPE key_state AS ENUM ('0', '1', '2', '3');
 COMMENT ON TYPE key_state IS 'KeyState: 0=Active, 1=PendingRotation, 2=Inactive, 3=Destroyed';
+
+-- Key Derivation Parameters
+CREATE TABLE key_derivation_params (
+    id          UUID PRIMARY KEY,
+    pbkdf2_salt BYTEA NOT NULL,       -- PBKDF2 salt
+    iterations  INTEGER NOT NULL,      -- PBKDF2 iterations
+    hkdf_salt   BYTEA,                -- Optional HKDF salt
+    hkdf_info   BYTEA NOT NULL,       -- HKDF context info
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 -- Key Pairs
 CREATE TABLE key_pairs (
@@ -97,6 +128,15 @@ CREATE INDEX idx_envelopes_state ON envelopes(state);
 ### Key-Value (Redis)
 
 ```
+# Key Derivation Parameters
+kd:{id} -> {
+    pbkdf2_salt: bytes,    # PBKDF2 salt
+    iterations: number,    # PBKDF2 iterations
+    hkdf_salt: bytes,     # Optional HKDF salt
+    hkdf_info: bytes,     # HKDF context info
+    created_at: timestamp
+}
+
 # Key Pairs
 kp:{id} -> {
     algorithm: number,   # 0=RSA-2048-OAEP-SHA256
@@ -135,6 +175,16 @@ keypair_envelopes:{owner_id} -> Set[env_id]  # Envelope IDs for KeyPair
 ### Document (MongoDB)
 
 ```javascript
+// Key Derivation Parameters Collection
+{
+    _id: UUID,
+    pbkdf2Salt: Binary,    // PBKDF2 salt
+    iterations: Number,    // PBKDF2 iterations
+    hkdfSalt: Binary,     // Optional HKDF salt
+    hkdfInfo: Binary,     // HKDF context info
+    createdAt: Timestamp
+}
+
 // Key Pairs Collection
 {
     _id: UUID,
@@ -189,13 +239,15 @@ db.deks.createIndex({ "envelopes.state": 1 });
    - 2: Inactive
    - 3: Destroyed
 
-3. **Validation Rules**
-   - KeyPairs and Envelopes must use RSA-2048-OAEP-SHA256 (0)
-   - DEKs must use AES-256-GCM (1)
-   - States must be within valid range
-   - Algorithm changes should be rejected
-
-4. **Storage Considerations**
+3. **Storage Considerations**
+   - Master Key and KEK never stored
+   - Only derivation parameters are persisted
    - SQL uses SMALLINT with CHECK constraints
    - Redis and MongoDB use numeric values
    - All backends should validate values on write
+
+4. **Memory Protection**
+   - Key material cleared after use
+   - Master Key cleared after KEK derivation
+   - KEK cleared after private key encryption
+   - Secure memory wiping when available

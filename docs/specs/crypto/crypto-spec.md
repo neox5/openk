@@ -1,5 +1,29 @@
 # OpenK Cryptographic Specification
 
+## Key Hierarchy
+
+### Core Concepts
+1. User Credentials -> Master Key (via PBKDF2)
+   - Authentication and identity proof
+   - Rotates with password changes
+
+2. Independent KEK (via PBKDF2 or external source)
+   - Storage protection
+   - Independent rotation cycle
+   - Multiple active KEKs possible
+
+3. KeyPair (stable identity)
+   - Long-term cryptographic identity
+   - Protected by KEK(s)
+   - Revocation rather than rotation
+
+4. DEK (via random generation)
+   - Secret encryption
+   - Wrapped via KeyPair (envelope)
+   - Supports rotation for containment
+
+Each layer provides distinct security properties with clear separation of concerns.
+
 ## Core Cryptographic Components
 
 ### Data Structures
@@ -17,12 +41,21 @@ const (
     AlgorithmAESGCM256
 )
 
-// KeyPair represents an asymmetric RSA key pair used for key wrapping
+// KeyPair represents a long-term identity through an asymmetric RSA key pair
 type KeyPair struct {
     ID        string     
     Algorithm Algorithm  // AlgorithmRSA
     PublicKey []byte     // X.509/SPKI format
-    Private   Ciphertext // Encrypted with KEK derived from user credentials
+    Private   Ciphertext // Encrypted with KEK
+    Created   time.Time
+    State     KeyState
+}
+
+// KEK represents a key encryption key for protecting KeyPair private keys
+type KEK struct {
+    ID        string
+    Algorithm Algorithm // AlgorithmAES
+    Salt      []byte    // PBKDF2 salt if derived
     Created   time.Time
     State     KeyState
 }
@@ -61,108 +94,125 @@ const (
 
 ### Algorithm Parameters
 
-#### RSA Key Wrapping
+#### Identity Keys (RSA)
 - Algorithm: RSA-2048 with OAEP
 - Hash Algorithm: SHA-256 (for both message digest and MGF1)
 - Key Format: PKCS#8 (Private Key), X.509/SPKI (Public Key)
-- Use: Key wrapping operations
+- Use: Long-term identity and key wrapping operations
+- Rotation: Not intended for rotation, focus on protection
 
-#### Symmetric Encryption
+#### Storage Protection (KEK)
+- Algorithm: AES-256-GCM
+- Key Size: 256 bits
+- Independent derivation parameters
+- Multiple active keys supported
+- Regular rotation capability
+
+#### Data Encryption (DEK)
 - Algorithm: AES-256-GCM
 - Key Size: 256 bits
 - Nonce Size: 96 bits (random)
 - Auth Tag Size: 128 bits
-- Use: Data encryption operations
+- Regular rotation supported
 
-#### Key Derivation
+### Key Derivation
+
+#### Master Key (Authentication)
 - Algorithm: PBKDF2-HMAC-SHA256
-- Salt Size: 128 bits
+- Salt Size: 128 bits (16 bytes)
+- Output Size: 256 bits (32 bytes)
 - Iteration Count: 100,000
-- Use: Deriving keys from user credentials
+- Use: Authentication proof
+- Rotation: On password change only
 
-## Cryptographic Processes
+#### KEK Derivation (if not externally provided)
+- Algorithm: PBKDF2-HMAC-SHA256
+- Independent salt and iteration count
+- Output Size: 256 bits (32 bytes)
+- Use: KeyPair protection
+- Rotation: Independent cycle
 
-### Key Generation
-1. **DEK Generation**
-   - Generate 256-bit random key using CSPRNG
-   - Create DEK structure with AlgorithmAES
-   - State set to KeyStateActive
+## Identity Management
 
-2. **KeyPair Generation**
-   - Generate RSA-2048 key pair using CSPRNG
-   - Export private key in PKCS#8 format
-   - Export public key in X.509/SPKI format
-   - Create KeyPair structure with AlgorithmRSA
-   - State set to KeyStateActive
+### KeyPair Lifecycle
+1. **Creation**
+   - Generate during user/entity initialization
+   - Strong protection with KEK
+   - Record creation metadata
 
-### Key Wrapping
-1. **Wrapping DEK**
-   - Input: DEK, recipient's public key
-   - Generate Envelope with new UUID
-   - Encrypt DEK using RSA-OAEP
-   - Store result in Envelope.Key as Ciphertext
-   - Set OwnerID to recipient's KeyPair ID
+2. **Usage**
+   - Long-term stable identity
+   - Used for DEK wrapping
+   - Trust anchor for system
 
-2. **Wrapping Private Key**
-   - Input: RSA private key, derived KEK
-   - Encrypt private key using AES-256-GCM
-   - Store result in KeyPair.Private as Ciphertext
+3. **Protection**
+   - Multiple KEK support
+   - Regular KEK rotation
+   - Secure storage requirements
 
-### Key Rotation
-1. **DEK Rotation**
-   - Generate new DEK with KeyStateActive
-   - Set old DEK state to KeyStatePendingRotation
-   - Re-encrypt all data with new DEK
-   - Create new Envelopes for all recipients
-   - Set old DEK state to KeyStateInactive
+4. **Revocation**
+   - Clear revocation status
+   - Timestamp and reason
+   - No recovery after revocation
 
-2. **KeyPair Rotation**
-   - Generate new KeyPair with KeyStateActive
-   - Set old KeyPair state to KeyStatePendingRotation
-   - Re-wrap all relevant DEKs
-   - Set old KeyPair state to KeyStateInactive
+### KEK Management
 
-### Key State Transitions
-1. **Active → PendingRotation**
-   - Triggered by rotation initiation
-   - Key still usable for decryption
-   - New operations use replacement key
+#### Independent KEK Lifecycle
+1. **Creation**
+   - Either derived or externally provided
+   - Unique identifier and metadata
+   - Clear protection scope
 
-2. **PendingRotation → Inactive**
-   - All dependent data re-encrypted
-   - All dependent keys re-wrapped
-   - Key no longer used for operations
-   - Can be reactivated if needed
+2. **Rotation**
+   - Independent rotation schedule
+   - Can maintain multiple active KEKs
+   - Clean transition process
 
-3. **Any State → Destroyed**
-   - Permanent, irreversible operation
-   - Key material securely erased
-   - All references marked as destroyed
-   - Cannot be used for any operations
+3. **Emergency Procedures**
+   - Fast rotation capability
+   - Multiple KEK support
+   - Clear recovery process
 
-## Security Considerations
+## Data Protection
+
+### DEK Lifecycle
+1. **Generation**
+   - Random generation
+   - Envelope creation
+   - Distribution to authorized users
+
+2. **Rotation Triggers**
+   - Regular schedule
+   - Security incidents
+   - Access revocation
+   - Compliance requirements
+
+3. **Rotation Process**
+   - New DEK generation
+   - Envelope updates
+   - Data re-encryption
+   - Clean state transition
+
+## Security Requirements
 
 ### Key Material Handling
-- Clear DEK.Key from memory after use
-- Never serialize DEK.Key to storage
-- Clear unwrapped private keys after use
-- Clear derived KEKs after use
-
-### Nonce Requirements
-- Always generate new random nonces
-- Never reuse nonces with same key
-- Use CSPRNG for nonce generation
+- Clear Master Key after authentication
+- Protect KEKs during use
+- Clear unwrapped private keys
+- Secure memory handling
+- Anti-swapping measures
 
 ### Error Handling
-- Clear sensitive data on errors
-- Never expose key material in errors
-- Use constant-time comparisons
-- Implement rate limiting on decryption
+- Clear sensitive data
+- Constant-time operations
+- Rate limiting on critical operations
+- Appropriate error types
 
 ## Standards Compliance
 - FIPS 197 (AES)
 - FIPS 198-1 (HMAC)
 - NIST SP 800-38D (GCM)
-- NIST SP 800-56B (RSA KTS)
+- NIST SP 800-56B (RSA)
+- NIST SP 800-108 (Key Derivation)
 - PKCS#1 v2.2 (RSA OAEP)
-- PKCS#8 (Private Key Format)
+- PKCS#8 (Private Key Info)

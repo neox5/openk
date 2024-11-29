@@ -1,155 +1,129 @@
 # OpenK Implementation Todo List
 
-## 1. Core Cryptographic Foundation
-- [x] Implement core algorithm types
-  - [x] Define supported algorithms (RSA-OAEP-SHA256, AES-GCM-256)
-  - [x] Add string representations
-  - [x] Create unit tests
-- [x] Implement key state management
-  - [x] Define key states (Active, PendingRotation, Inactive, Destroyed)
-  - [x] Add state transitions
-  - [x] Create unit tests
-- [x] Implement core Ciphertext structure
-  - [x] Define structure with Nonce, Data, and Tag
-  - [x] Add validation in constructor
-  - [x] Handle empty data case
-  - [x] Create unit tests
-- [ ] Implement core crypto structures
-  - [ ] KeyPair (RSA-2048-OAEP)
-    - [ ] Define structure using Ciphertext
-    - [ ] Key generation
-    - [ ] Key wrapping
-    - [ ] Export/import functions
-  - [ ] DEK (AES-256-GCM)
-    - [ ] Key generation
-    - [ ] Encryption/decryption
-    - [ ] Memory protection
-  - [ ] Envelope encryption
-    - [ ] Creation
-    - [ ] Wrapping/unwrapping
-    - [ ] Recipient management
-- [ ] Memory protection
-  - [ ] Secure memory wiping
-  - [ ] Memory encryption when available
-  - [ ] Key material cleanup
-- [ ] Error handling
-  - [ ] Implement constant-time comparisons
-  - [ ] Create secure error messages
-  - [ ] Add rate limiting for operations
+## Phase 1: Critical Decisions & Design
 
-## 2. Storage Layer
-- [ ] PostgreSQL implementation
-  - [ ] Create database schemas
-    - [ ] key_pairs table
-    - [ ] deks table
-    - [ ] envelopes table
-  - [ ] Add indexes
-  - [ ] Implement constraints
-- [ ] Redis caching
-  - [ ] Set up key structures
-  - [ ] Implement caching strategies
-  - [ ] Add cache invalidation
-- [ ] MongoDB support
-  - [ ] Create collections
-  - [ ] Set up indexes
-  - [ ] Implement document structures
-- [ ] Storage abstraction
-  - [ ] Create interface definitions
-  - [ ] Build backend implementations
-  - [ ] Add migration support
+### 1. Core Architecture Decisions
+- [ ] KEK Management Strategy
+  - [ ] Maximum number of active KEKs
+  - [ ] Rotation schedules and triggers
+  - [ ] Backup requirements and procedures
+  - [ ] Emergency rotation criteria
 
-## 3. Service Infrastructure
-- [ ] Secret Service
-  - [ ] Core operations
-    - [ ] Create/update secrets
-    - [ ] Retrieve secrets
-    - [ ] Delete/destroy secrets
-  - [ ] Version control
-    - [ ] Version tracking
-    - [ ] Rollback support
-  - [ ] Transaction management
-    - [ ] Atomic operations
-    - [ ] Consistency checks
-- [ ] Authentication layer
-  - [ ] OAuth integration
-  - [ ] OIDC support
-  - [ ] SSO capabilities
-  - [ ] Session management
-    - [ ] Creation/validation
-    - [ ] Expiration handling
-    - [ ] Refresh mechanisms
+- [ ] Recovery Strategy
+  - [ ] Organization admin recovery requirements (M-of-N, thresholds)
+  - [ ] Recovery key distribution model
+  - [ ] Emergency access activation process
+  - [ ] Recovery time objectives
 
-## 4. Privacy-Preserving Layer
-- [ ] HMAC implementation
-  - [ ] Generation functions
-  - [ ] Validation mechanisms
-  - [ ] Key management
-- [ ] Path segment privacy
-  - [ ] Encryption
-  - [ ] Storage
-  - [ ] Retrieval
-- [ ] Label privacy
-  - [ ] Key/value encryption
-  - [ ] Search support
-  - [ ] HMAC generation
-- [ ] Search mechanisms
-  - [ ] Path-based search
-  - [ ] Label search
-  - [ ] Combined queries
+- [ ] Device Management Strategy
+  - [ ] Device authentication model
+  - [ ] Sync conflict resolution rules
+  - [ ] Device-specific key protection approach
+  - [ ] Multi-device coordination
 
-## 5. Organization Service
-- [ ] Client interaction
-  - [ ] API endpoints
-  - [ ] Request validation
-  - [ ] Response formatting
-- [ ] Metadata management
-  - [ ] Path handling
-  - [ ] Label management
-  - [ ] Tag support
-- [ ] Input validation
-  - [ ] Path validation
-  - [ ] Label constraints
-  - [ ] Format checking
-- [ ] Access control
-  - [ ] Permission checking
-  - [ ] Role management
-  - [ ] Audit logging
+- [ ] Security Operations Requirements
+  - [ ] Incident response procedures
+  - [ ] Compromise recovery process
+  - [ ] Audit requirements and retention
+  - [ ] Compliance needs
 
-## 6. Client SDK
-- [ ] Encryption tools
-  - [ ] Client-side encryption
-  - [ ] Decryption handling
-  - [ ] Key management
-- [ ] Input validation
-  - [ ] Format checking
-  - [ ] Constraint validation
-  - [ ] Error handling
-- [ ] Key derivation
-  - [ ] Password-based derivation
-  - [ ] Key storage
+### 2. Architecture Design Documentation
+- [ ] ADR-010: Recovery Architecture
   - [ ] Recovery mechanisms
-- [ ] Device sync
-  - [ ] State synchronization
+  - [ ] Emergency access
+  - [ ] Backup strategy
+  - [ ] Integration points
+
+- [ ] ADR-011: Device Management
+  - [ ] Device registration
+  - [ ] Sync protocols
+  - [ ] Security model
+  - [ ] State management
+
+- [ ] ADR-012: Backup Architecture
+  - [ ] KEK backup
+  - [ ] Identity backup
+  - [ ] Recovery procedures
+  - [ ] Secure storage
+
+## Phase 2: Implementation
+
+### 1. Core Cryptographic Foundation
+- [x] Implement core algorithm types
+- [x] Implement key state management
+- [x] Implement core Ciphertext structure
+- [x] Implement PBKDF2 key derivation
+- [ ] Implement HKDF for KEK derivation
+- [ ] Implement Key Protection Service
+  - [ ] Multiple KEK support
+  - [ ] KEK rotation management
+  - [ ] KEK backup procedures
+  - [ ] Emergency procedures
+
+### 2. Identity Management
+- [ ] Update KeyPair implementation
+  - [ ] Stable identity model
+  - [ ] Key wrapping
+  - [ ] Secure memory handling
+  - [ ] Export/import functions
+- [ ] Implement Identity Service
+  - [ ] Long-term KeyPair handling
+  - [ ] Revocation mechanisms
+  - [ ] Trust verification
+  - [ ] Identity backup
+
+### 3. Recovery & Device Management
+- [ ] Implement Recovery System
+  - [ ] Personal recovery flows
+  - [ ] Organization recovery flows
+  - [ ] Device recovery procedures
+  - [ ] Emergency access implementation
+- [ ] Implement Device Management
+  - [ ] Registration protocol
+  - [ ] Sync mechanism
   - [ ] Conflict resolution
-  - [ ] Offline support
+  - [ ] Device key management
+
+### 4. Storage Layer
+- [ ] PostgreSQL implementation
+  - [ ] Schema updates for new model
+  - [ ] Migration procedures
+- [ ] Redis caching
+  - [ ] Key structures
+  - [ ] Caching strategy
+- [ ] MongoDB support (if needed)
+  - [ ] Collection design
+  - [ ] Index optimization
+
+## Phase 3: Security Operations & Documentation
+
+### 1. Security Operations
+- [ ] Implement Audit System
+- [ ] Incident Response Procedures
+- [ ] Monitoring & Alerting
+- [ ] Compliance Validation
+
+### 2. Documentation
+- [ ] Implementation Guides
+- [ ] Security Guidelines
+- [ ] Operational Procedures
+- [ ] Recovery Playbooks
 
 ## Continuous Tasks
-- [ ] Testing
-  - [x] Unit tests for core types (Algorithm, KeyState, Ciphertext)
-  - [ ] Integration tests
-  - [ ] Security tests
-- [ ] Documentation
-  - [ ] API documentation
-  - [ ] Implementation guides
-  - [ ] Security guidelines
-- [ ] Security Auditing
-  - [ ] Code reviews
-  - [ ] Penetration testing
-  - [ ] Compliance checking
+- [ ] Security testing
+- [ ] Performance monitoring
+- [ ] Code reviews
+- [ ] Documentation updates
 
-## Notes on Progress
-- Completed implementation of core Algorithm type with RSA-OAEP-SHA256 and AES-GCM-256 support
-- Completed implementation of KeyState with all required states and transitions
-- Completed implementation of Ciphertext structure for encrypted data storage
-- Added comprehensive unit tests for all completed components
-- Next focus should be on implementing the KeyPair structure, as it will be the first consumer of our Ciphertext type
+## Already Completed
+- [x] Core algorithm types
+- [x] Key state management
+- [x] Ciphertext structure
+- [x] PBKDF2 implementation
+- [x] Initial ADRs (001-009)
+
+## Notes
+- Start with Core Architecture Decisions as they inform all other work
+- Complete ADRs before starting related implementation
+- Regular security reviews throughout process
+- Update documentation continuously

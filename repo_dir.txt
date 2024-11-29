@@ -9,7 +9,8 @@
 │   │   ├── crypto
 │   │   │   ├── 005_encryption_architecture.md
 │   │   │   ├── 007_org_secret_management.md
-│   │   │   └── 008_personal_vault_management.md
+│   │   │   ├── 008_personal_vault_management.md
+│   │   │   └── 009_key_derivation_architecture.md
 │   │   └── privacy
 │   │       └── 006_privacy-preserving_metadata.md
 │   ├── misc
@@ -25,8 +26,12 @@
 │   ├── crypto
 │   │   ├── algorithm.go
 │   │   ├── algorithm_test.go
+│   │   ├── ciphertext.go
+│   │   ├── ciphertext_test.go
 │   │   ├── key_state.go
-│   │   └── key_state_test.go
+│   │   ├── key_state_test.go
+│   │   ├── pbkdf2.go
+│   │   └── pbkdf2_test.go
 │   ├── secret
 │   └── storage
 ├── go.mod
