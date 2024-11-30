@@ -21,7 +21,7 @@ type KeyPair struct {
     ID        string     
     Algorithm Algorithm  // AlgorithmRSAOAEPSHA256
     PublicKey []byte     // X.509/SPKI format
-    Private   Ciphertext // Encrypted with KEK
+    Private   Ciphertext // Encrypted with Master Key
     Created   time.Time
     State     KeyState   
 }
@@ -45,18 +45,11 @@ type Envelope struct {
     OwnerID   string    // References recipient's KeyPair.ID
 }
 
-// KeyDerivation represents parameters for Master Key derivation
+// KeyDerivation represents parameters for key derivation
 type KeyDerivation struct {
-    Salt          []byte    // 128-bit random salt
-    Iterations    int       // PBKDF2 iteration count
-    MasterKeySize int       // 256 bits
-}
-
-// HKDFParams represents parameters for KEK derivation
-type HKDFParams struct {
-    Salt     []byte // Optional, 256 bits if used
-    Info     []byte // "OpenK-KEK-v1"
-    KeySize  int    // 256 bits
+    Username     string    // Used as salt for Master Key
+    Iterations   int       // PBKDF2 iteration count
+    CreatedAt    time.Time
 }
 ```
 
@@ -76,10 +69,8 @@ COMMENT ON TYPE key_state IS 'KeyState: 0=Active, 1=PendingRotation, 2=Inactive,
 -- Key Derivation Parameters
 CREATE TABLE key_derivation_params (
     id          UUID PRIMARY KEY,
-    pbkdf2_salt BYTEA NOT NULL,       -- PBKDF2 salt
-    iterations  INTEGER NOT NULL,      -- PBKDF2 iterations
-    hkdf_salt   BYTEA,                -- Optional HKDF salt
-    hkdf_info   BYTEA NOT NULL,       -- HKDF context info
+    username    TEXT NOT NULL,       -- Used as salt for Master Key
+    iterations  INTEGER NOT NULL,     -- PBKDF2 iterations
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -130,10 +121,8 @@ CREATE INDEX idx_envelopes_state ON envelopes(state);
 ```
 # Key Derivation Parameters
 kd:{id} -> {
-    pbkdf2_salt: bytes,    # PBKDF2 salt
-    iterations: number,    # PBKDF2 iterations
-    hkdf_salt: bytes,     # Optional HKDF salt
-    hkdf_info: bytes,     # HKDF context info
+    username: string,     # Used as salt for Master Key
+    iterations: number,   # PBKDF2 iterations
     created_at: timestamp
 }
 
@@ -178,10 +167,8 @@ keypair_envelopes:{owner_id} -> Set[env_id]  # Envelope IDs for KeyPair
 // Key Derivation Parameters Collection
 {
     _id: UUID,
-    pbkdf2Salt: Binary,    // PBKDF2 salt
-    iterations: Number,    // PBKDF2 iterations
-    hkdfSalt: Binary,     // Optional HKDF salt
-    hkdfInfo: Binary,     // HKDF context info
+    username: String,     // Used as salt for Master Key
+    iterations: Number,   // PBKDF2 iterations
     createdAt: Timestamp
 }
 
@@ -240,7 +227,7 @@ db.deks.createIndex({ "envelopes.state": 1 });
    - 3: Destroyed
 
 3. **Storage Considerations**
-   - Master Key and KEK never stored
+   - Master Key and Auth Key never stored
    - Only derivation parameters are persisted
    - SQL uses SMALLINT with CHECK constraints
    - Redis and MongoDB use numeric values
@@ -248,6 +235,6 @@ db.deks.createIndex({ "envelopes.state": 1 });
 
 4. **Memory Protection**
    - Key material cleared after use
-   - Master Key cleared after KEK derivation
-   - KEK cleared after private key encryption
+   - Master Key cleared after KeyPair operations
+   - Auth Key cleared after session establishment
    - Secure memory wiping when available
