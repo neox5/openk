@@ -5,51 +5,47 @@
 - [x] Ciphertext structure with validation
 - [x] Key State management
 - [x] PBKDF2 key derivation with salt generation
+- [x] AES-256-GCM encryption operations with comprehensive tests
+- [x] Implement RSA-2048-OAEP-SHA256 operations with comprehensive tests
 
 ## Next Steps
 
-### 1. Core Crypto Operations
-- [ ] Implement AES-256-GCM operations
-  - [ ] Encryption function
-  - [ ] Decryption function
-  - [ ] Nonce generation
-  - [ ] Tests with test vectors
-- [ ] Implement RSA-2048-OAEP-SHA256 operations
-  - [ ] Key generation
-  - [ ] Encryption/Decryption
-  - [ ] Key format handling (PKCS#8/SPKI)
-  - [ ] Tests with test vectors
-
-### 2. Key Management Structures
+### 1. Key Management Structures
 - [ ] Implement KeyPair type
-  - [ ] Generation
-  - [ ] Protection with Master Key
-  - [ ] Export/Import functions
-- [ ] Implement DEK type
-  - [ ] Random generation
+  - [ ] Generation using RSA functions
+  - [ ] Protection with Master Key using AES
+  - [ ] Export/Import functions for keys
+  - [ ] State management
+  - [ ] Tests
+- [ ] Implement DEK (Data Encryption Key) type
+  - [ ] Random generation using AES functions
   - [ ] Envelope encryption
   - [ ] Secure deletion
+  - [ ] State transitions
+  - [ ] Tests
 - [ ] Implement Envelope type
   - [ ] Creation with recipient key
   - [ ] Unwrapping logic
-  - [ ] State transitions
+  - [ ] State management
+  - [ ] Tests
 
-### 3. Derived Key Management
+### 2. Derived Key Management
 - [ ] Extend PBKDF2 implementation
   - [ ] Auth Key derivation
   - [ ] Memory protection
   - [ ] Key validation
+  - [ ] Tests
 - [ ] Key memory handling
   - [ ] Secure wiping
   - [ ] Anti-swap protections
   - [ ] Clear key material
+  - [ ] Tests
 
-### 4. Testing Infrastructure
-- [ ] Test vectors for AES-GCM
-- [ ] Test vectors for RSA-OAEP
-- [ ] Key generation tests
-- [ ] Memory handling tests
+### 3. Integration Testing
 - [ ] End-to-end encryption tests
+- [ ] Key lifecycle tests
+- [ ] Memory handling tests
+- [ ] Performance benchmarks
 
 ## Later Phases
 - Storage layer implementations
