@@ -78,12 +78,13 @@ const (
 
 // KeyPair represents a long-term identity through an asymmetric RSA key pair
 type KeyPair struct {
-    ID        string     
-    Algorithm Algorithm  // AlgorithmRSA
-    PublicKey []byte     // X.509/SPKI format
-    Private   Ciphertext // Encrypted with Master Key
-    Created   time.Time
-    State     KeyState
+    ID                  string     
+    Algorithm           Algorithm  // AlgorithmRSA
+    PublicKey           []byte     // X.509/SPKI format
+    PrivateKey          Ciphertext // Encrypted with Master Key
+    RecoveryPrivateKey  Ciphertext // Encrypted with Recovery Key
+    Created             time.Time
+    State               KeyState
 }
 
 // DEK (Data Encryption Key) is a symmetric key that encrypts data

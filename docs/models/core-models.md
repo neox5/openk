@@ -18,12 +18,13 @@ type Ciphertext struct {
 
 // KeyPair represents an asymmetric RSA key pair used for key wrapping
 type KeyPair struct {
-    ID        string     
-    Algorithm Algorithm  // AlgorithmRSAOAEPSHA256
-    PublicKey []byte     // X.509/SPKI format
-    Private   Ciphertext // Encrypted with Master Key
-    Created   time.Time
-    State     KeyState   
+    ID                 string     
+    Algorithm         Algorithm  // AlgorithmRSAOAEPSHA256
+    PublicKey         []byte     // X.509/SPKI format
+    PrivateKey        Ciphertext // Encrypted with Master Key
+    RecoveryPrivateKey Ciphertext // Encrypted with Recovery Key
+    Created           time.Time
+    State             KeyState   
 }
 
 // DEK (Data Encryption Key) is a symmetric key that encrypts data
@@ -82,6 +83,9 @@ CREATE TABLE key_pairs (
     nonce       BYTEA NOT NULL,    -- Private key encryption nonce
     data        BYTEA NOT NULL,    -- Encrypted private key data
     tag         BYTEA NOT NULL,    -- Private key encryption tag
+    recovery_nonce BYTEA NOT NULL, -- Recovery private key encryption nonce
+    recovery_data  BYTEA NOT NULL, -- Recovery encrypted private key data
+    recovery_tag   BYTEA NOT NULL, -- Recovery private key encryption tag
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     state       SMALLINT NOT NULL DEFAULT 0 CHECK (state >= 0 AND state <= 3)
 );
@@ -133,6 +137,9 @@ kp:{id} -> {
     nonce: bytes,       # Private key encryption nonce
     data: bytes,        # Encrypted private key data
     tag: bytes,         # Private key encryption tag
+    recovery_nonce: bytes,  # Recovery private key encryption nonce
+    recovery_data: bytes,   # Recovery encrypted private key data
+    recovery_tag: bytes,    # Recovery private key encryption tag
     created_at: timestamp,
     state: number       # 0=Active, 1=PendingRotation, 2=Inactive, 3=Destroyed
 }
@@ -178,6 +185,11 @@ keypair_envelopes:{owner_id} -> Set[env_id]  # Envelope IDs for KeyPair
     algorithm: Number,  // 0=RSA-2048-OAEP-SHA256
     publicKey: Binary,  // X.509/SPKI format
     private: {
+        nonce: Binary,
+        data: Binary,
+        tag: Binary
+    },
+    recoveryPrivate: {
         nonce: Binary,
         data: Binary,
         tag: Binary
