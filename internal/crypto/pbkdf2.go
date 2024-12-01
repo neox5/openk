@@ -10,19 +10,21 @@ import (
 
 const (
 	// PBKDF2 parameters
-	SaltSize       = 16 // 128 bits
-	MasterKeySize  = 32 // 256 bits
-	IterationCount = 100_000
+	DefaultSaltSize = 16 // 128 bits (for GenerateSalt only)
+	MasterKeySize   = 32 // 256 bits
+	IterationCount  = 100_000
+	MinSaltLength   = 1 // Minimum allowed salt length
 )
 
 var (
-	ErrInvalidSaltSize = errors.New("salt must be 16 bytes")
-	ErrEmptyPassword   = errors.New("password cannot be empty")
+	ErrEmptyPassword = errors.New("password cannot be empty")
+	ErrInvalidSalt   = errors.New("salt cannot be empty")
 )
 
 // GenerateSalt generates a cryptographically secure random salt
+// This is used when we need a random salt (not for username-based salts)
 func GenerateSalt() ([]byte, error) {
-	salt := make([]byte, SaltSize)
+	salt := make([]byte, DefaultSaltSize)
 	_, err := rand.Read(salt)
 	if err != nil {
 		return nil, err
@@ -35,8 +37,8 @@ func DeriveKey(password, salt []byte, iterations, keyLen int) ([]byte, error) {
 	if len(password) == 0 {
 		return nil, ErrEmptyPassword
 	}
-	if len(salt) != SaltSize {
-		return nil, ErrInvalidSaltSize
+	if len(salt) < MinSaltLength {
+		return nil, ErrInvalidSalt
 	}
 
 	return pbkdf2.Key(password, salt, iterations, keyLen, sha256.New), nil

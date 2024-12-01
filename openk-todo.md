@@ -7,15 +7,17 @@
 - [x] Basic PBKDF2 key derivation with salt generation
 - [x] AES-256-GCM encryption operations
 - [x] RSA-2048-OAEP-SHA256 operations
+- [x] Basic Key Protection through Vault pattern
+- [x] MasterKey operations with secure key handling
 
 ## Phase 1 - Core Foundation
 ### Basic Key Protection
-- [ ] MasterKey operations
-  - [ ] Basic protected operation pattern
-  - [ ] Key derivation integration (using existing PBKDF2)
-  - [ ] Basic memory clearing
-  - [ ] Tests with standard test vectors
-  - [ ] Basic integration tests
+- [x] MasterKey operations
+  - [x] Basic protected operation pattern using Vault
+  - [x] Key derivation integration (using existing PBKDF2)
+  - [x] Basic memory clearing through Vault
+  - [x] Tests with standard test vectors
+  - [x] Basic integration tests
 
 ### Core Key Structures
 - [ ] KeyPair type (using MasterKey protection)

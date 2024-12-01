@@ -107,23 +107,58 @@ func TestVault_Cleanup(t *testing.T) {
 	})
 }
 
-func TestVault_Lifecycle(t *testing.T) {
-	v := kms.NewVault()
-	assert.False(t, v.HasKey())
+func TestVault_Do(t *testing.T) {
+	t.Run("successful operation", func(t *testing.T) {
+		v := kms.NewVault()
+		var keyUsed []byte
 
-	// Store and verify key
-	assert.NoError(t, v.Store(testKey))
-	assert.True(t, v.HasKey())
+		err := v.Do(func(v *kms.Vault) error {
+			if err := v.Store(testKey); err != nil {
+				return err
+			}
 
-	// Use key
-	err := v.UseKey(func(key []byte) error {
-		assert.Equal(t, testKey, key)
-		return nil
+			return v.UseKey(func(key []byte) error {
+				keyUsed = make([]byte, len(key))
+				copy(keyUsed, key)
+				return nil
+			})
+		})
+
+		assert.NoError(t, err)
+		assert.Equal(t, testKey, keyUsed)
+
+		// Verify cleanup happened
+		err = v.UseKey(func(key []byte) error { return nil })
+		assert.ErrorIs(t, err, kms.ErrNoKey)
 	})
-	assert.NoError(t, err)
 
-	// Cleanup
-	assert.NoError(t, v.Cleanup())
-	assert.False(t, v.HasKey())
+	t.Run("operation error", func(t *testing.T) {
+		v := kms.NewVault()
+		testErr := assert.AnError
+
+		err := v.Do(func(v *kms.Vault) error {
+			if err := v.Store(testKey); err != nil {
+				return err
+			}
+			return testErr
+		})
+
+		assert.ErrorIs(t, err, testErr)
+		// Verify cleanup happened despite error
+		err = v.UseKey(func(key []byte) error { return nil })
+		assert.ErrorIs(t, err, kms.ErrNoKey)
+	})
+
+	t.Run("store error", func(t *testing.T) {
+		v := kms.NewVault()
+
+		err := v.Do(func(v *kms.Vault) error {
+			if err := v.Store([]byte{}); err != nil {
+				return err
+			}
+			return nil
+		})
+
+		assert.ErrorIs(t, err, kms.ErrInvalidKey)
+	})
 }
-

@@ -65,3 +65,9 @@ func (v *Vault) Cleanup() error {
 	runtime.GC()
 	return nil
 }
+
+func (v *Vault) Do(fn func(*Vault) error) error {
+  err := fn(v)
+  v.Cleanup()
+  return err
+}
