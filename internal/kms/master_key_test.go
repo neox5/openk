@@ -10,137 +10,83 @@ import (
 
 var (
 	testPassword = []byte("test-password")
-	testUsername = "test-user"
+	testUsername = []byte("test-user")
 )
 
 func TestMasterKey_Derive(t *testing.T) {
 	t.Run("successful derivation", func(t *testing.T) {
-		v := kms.NewVault()
 		mk := kms.NewMasterKey()
-
-		err := v.Do(func(v *kms.Vault) error {
-			return mk.Derive(v, testPassword, testUsername)
-		})
-		assert.NoError(t, err)
+		assert.NoError(t, mk.Derive(testPassword, testUsername))
 	})
 
 	t.Run("empty password", func(t *testing.T) {
-		v := kms.NewVault()
 		mk := kms.NewMasterKey()
-
-		err := v.Do(func(v *kms.Vault) error {
-			return mk.Derive(v, []byte{}, testUsername)
-		})
-		assert.Error(t, err)
+		assert.ErrorIs(t, mk.Derive([]byte{}, testUsername), kms.ErrInvalidPassword)
 	})
 
 	t.Run("empty username", func(t *testing.T) {
-		v := kms.NewVault()
 		mk := kms.NewMasterKey()
+		assert.ErrorIs(t, mk.Derive(testPassword, []byte{}), kms.ErrInvalidUsername)
+	})
 
-		err := v.Do(func(v *kms.Vault) error {
-			return mk.Derive(v, testPassword, "")
-		})
-		assert.Error(t, err)
+	t.Run("key already set", func(t *testing.T) {
+		mk := kms.NewMasterKey()
+		assert.NoError(t, mk.Derive(testPassword, testUsername))
+		assert.ErrorIs(t, mk.Derive(testPassword, testUsername), kms.ErrKeyAlreadySet)
 	})
 }
 
-func TestMasterKey_DeriveAuth(t *testing.T) {
-	t.Run("successful auth derivation", func(t *testing.T) {
-		v := kms.NewVault()
-		mk := kms.NewMasterKey()
-
-		var authKey []byte
-		err := v.Do(func(v *kms.Vault) error {
-			if err := mk.Derive(v, testPassword, testUsername); err != nil {
-				return err
-			}
-
-			derived, err := mk.DeriveAuth(v)
-			if err != nil {
-				return err
-			}
-			authKey = derived
-			return nil
-		})
-
-		assert.NoError(t, err)
-		assert.NotEmpty(t, authKey)
-	})
-
-	t.Run("no master key derived", func(t *testing.T) {
-		v := kms.NewVault()
-		mk := kms.NewMasterKey()
-
-		err := v.Do(func(v *kms.Vault) error {
-			_, err := mk.DeriveAuth(v)
-			return err
-		})
-		assert.ErrorIs(t, err, kms.ErrNoKey)
-	})
-}
-
-func TestMasterKey_Encryption(t *testing.T) {
+func TestMasterKey_Encrypt(t *testing.T) {
 	plaintext := []byte("secret data")
 
 	t.Run("encrypt and decrypt", func(t *testing.T) {
-		v := kms.NewVault()
 		mk := kms.NewMasterKey()
+		assert.NoError(t, mk.Derive(testPassword, testUsername))
 
-		var ciphertext *crypto.Ciphertext
-		err := v.Do(func(v *kms.Vault) error {
-			if err := mk.Derive(v, testPassword, testUsername); err != nil {
-				return err
-			}
-
-			encrypted, err := mk.Encrypt(v, plaintext)
-			if err != nil {
-				return err
-			}
-			ciphertext = encrypted
-			return nil
-		})
+		// encrypt plaintext
+		encrypted, err := mk.Encrypt(plaintext)
 		assert.NoError(t, err)
-		assert.NotNil(t, ciphertext)
+		assert.NotNil(t, encrypted)
 
-		// Decrypt in new vault operation
-		var decrypted []byte
-		err = v.Do(func(v *kms.Vault) error {
-			if err := mk.Derive(v, testPassword, testUsername); err != nil {
-				return err
-			}
-
-			d, err := mk.Decrypt(v, ciphertext)
-			if err != nil {
-				return err
-			}
-			decrypted = d
-			return nil
-		})
-
+		// Decrypt ciphertext
+		decrypted, err := mk.Decrypt(encrypted)
 		assert.NoError(t, err)
 		assert.Equal(t, plaintext, decrypted)
 	})
 
 	t.Run("encrypt without master key", func(t *testing.T) {
-		v := kms.NewVault()
 		mk := kms.NewMasterKey()
-
-		err := v.Do(func(v *kms.Vault) error {
-			_, err := mk.Encrypt(v, plaintext)
-			return err
-		})
-		assert.ErrorIs(t, err, kms.ErrNoKey)
+		_, err := mk.Encrypt(plaintext)
+		assert.ErrorIs(t, err, kms.ErrKeyNotDerived)
 	})
 
 	t.Run("decrypt without master key", func(t *testing.T) {
-		v := kms.NewVault()
 		mk := kms.NewMasterKey()
+		_, err := mk.Decrypt(&crypto.Ciphertext{})
+		assert.ErrorIs(t, err, kms.ErrKeyNotDerived)
+	})
+}
 
-		err := v.Do(func(v *kms.Vault) error {
-			_, err := mk.Decrypt(v, &crypto.Ciphertext{})
-			return err
-		})
-		assert.ErrorIs(t, err, kms.ErrNoKey)
+func TestMasterKey_Clear(t *testing.T) {
+	mk := kms.NewMasterKey()
+	assert.NoError(t, mk.Derive(testPassword, testUsername))
+	assert.True(t, mk.HasKey())
+	mk.Clear()
+	assert.False(t, mk.HasKey())
+}
+
+func TestMasterKey_GetAuthKey(t *testing.T) {
+	t.Run("get authKey", func(t *testing.T) {
+		mk := kms.NewMasterKey()
+		assert.NoError(t, mk.Derive(testPassword, testUsername))
+		authKey, err := mk.GetAuthKey()
+		assert.NoError(t, err)
+		assert.NotNil(t, authKey)
+	})
+
+	t.Run("get authKey without derive", func(t *testing.T) {
+		mk := kms.NewMasterKey()
+		_, err := mk.GetAuthKey()
+		assert.ErrorIs(t, err, kms.ErrKeyNotDerived)
 	})
 }

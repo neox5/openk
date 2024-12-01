@@ -83,35 +83,3 @@ func TestDeriveKey(t *testing.T) {
 		}
 	})
 }
-
-func TestDeriveMasterKey(t *testing.T) {
-	salt := []byte("test-username")
-	password := []byte("test-password")
-
-	t.Run("produces correct key size", func(t *testing.T) {
-		key, err := crypto.DeriveMasterKey(password, salt)
-		assert.NoError(t, err)
-		assert.Equal(t, crypto.MasterKeySize, len(key))
-	})
-
-	t.Run("validates input", func(t *testing.T) {
-		key, err := crypto.DeriveMasterKey([]byte{}, salt)
-		assert.Error(t, err)
-		assert.Nil(t, key)
-		assert.Equal(t, crypto.ErrEmptyPassword, err)
-
-		key, err = crypto.DeriveMasterKey(password, []byte{})
-		assert.Error(t, err)
-		assert.Nil(t, key)
-		assert.Equal(t, crypto.ErrInvalidSalt, err)
-	})
-
-	t.Run("reproduces same key", func(t *testing.T) {
-		key1, err := crypto.DeriveMasterKey(password, salt)
-		assert.NoError(t, err)
-		key2, err := crypto.DeriveMasterKey(password, salt)
-		assert.NoError(t, err)
-		assert.True(t, bytes.Equal(key1, key2))
-	})
-}
-

@@ -10,10 +10,10 @@ import (
 
 const (
 	// PBKDF2 parameters
-	DefaultSaltSize = 16 // 128 bits (for GenerateSalt only)
-	MasterKeySize   = 32 // 256 bits
-	IterationCount  = 100_000
-	MinSaltLength   = 1 // Minimum allowed salt length
+	DefaultSaltSize      = 16 // 128 bits (for GenerateSalt only)
+	MasterKeySize        = 32 // 256 bits
+	PBKDF2IterationCount = 100_000
+	MinSaltLength        = 1 // Minimum allowed salt length
 )
 
 var (
@@ -42,9 +42,4 @@ func DeriveKey(password, salt []byte, iterations, keyLen int) ([]byte, error) {
 	}
 
 	return pbkdf2.Key(password, salt, iterations, keyLen, sha256.New), nil
-}
-
-// DeriveMasterKey derives a master key using predefined parameters
-func DeriveMasterKey(password, salt []byte) ([]byte, error) {
-	return DeriveKey(password, salt, IterationCount, MasterKeySize)
 }
