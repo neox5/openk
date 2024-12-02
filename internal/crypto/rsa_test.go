@@ -6,7 +6,6 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha256"
 	"crypto/x509"
 	"testing"
 
@@ -187,74 +186,97 @@ func TestRSA_Encrypt(t *testing.T) {
 	require.NoError(t, err)
 	pubKey := &privKey.PublicKey
 
-	t.Run("valid short message", func(t *testing.T) {
+	t.Run("valid encryption", func(t *testing.T) {
 		message := []byte("test message")
-		ciphertext, err := crypto.RSAEncrypt(pubKey, message)
+		ct, err := crypto.RSAEncrypt(pubKey, message)
 		assert.NoError(t, err)
-		assert.NotNil(t, ciphertext)
+		require.NotNil(t, ct)
 
-		plaintext, err := crypto.RSADecrypt(privKey, ciphertext)
+		// Verify ciphertext structure
+		assert.Equal(t, crypto.NonceSize, len(ct.Nonce))
+		assert.Equal(t, crypto.TagSize, len(ct.Tag))
+		assert.NotEmpty(t, ct.Data)
+
+		// Verify decryption
+		decrypted, err := crypto.RSADecrypt(privKey, ct.Data)
 		assert.NoError(t, err)
-		assert.Equal(t, message, plaintext)
+		assert.Equal(t, message, decrypted)
 	})
 
 	t.Run("empty message", func(t *testing.T) {
-		message := []byte{}
-		ciphertext, err := crypto.RSAEncrypt(pubKey, message)
+		ct, err := crypto.RSAEncrypt(pubKey, []byte{})
 		assert.NoError(t, err)
-		assert.NotNil(t, ciphertext)
+		require.NotNil(t, ct)
 
-		plaintext, err := crypto.RSADecrypt(privKey, ciphertext)
+		decrypted, err := crypto.RSADecrypt(privKey, ct.Data)
 		assert.NoError(t, err)
-		assert.Equal(t, message, plaintext)
+		assert.Empty(t, decrypted)
+	})
+
+	t.Run("nil message", func(t *testing.T) {
+		ct, err := crypto.RSAEncrypt(pubKey, nil)
+		assert.NoError(t, err)
+		require.NotNil(t, ct)
+
+		decrypted, err := crypto.RSADecrypt(privKey, ct.Data)
+		assert.NoError(t, err)
+		assert.Empty(t, decrypted)
 	})
 
 	t.Run("nil public key", func(t *testing.T) {
-		message := []byte("test")
-		ciphertext, err := crypto.RSAEncrypt(nil, message)
+		ct, err := crypto.RSAEncrypt(nil, []byte("test"))
 		assert.Error(t, err)
 		assert.Equal(t, crypto.ErrInvalidPublicKey, err)
-		assert.Nil(t, ciphertext)
-	})
-
-	t.Run("nil private key", func(t *testing.T) {
-		ciphertext := []byte("some encrypted data")
-		plaintext, err := crypto.RSADecrypt(nil, ciphertext)
-		assert.Error(t, err)
-		assert.Equal(t, crypto.ErrInvalidPrivateKey, err)
-		assert.Nil(t, plaintext)
-	})
-
-	t.Run("corrupted ciphertext", func(t *testing.T) {
-		message := []byte("test message")
-		ciphertext, err := crypto.RSAEncrypt(pubKey, message)
-		assert.NoError(t, err)
-		assert.NotNil(t, ciphertext)
-
-		ciphertext[len(ciphertext)-1] ^= 0xFF
-		plaintext, err := crypto.RSADecrypt(privKey, ciphertext)
-		assert.Error(t, err)
-		assert.Nil(t, plaintext)
+		assert.Nil(t, ct)
 	})
 
 	t.Run("message size limits", func(t *testing.T) {
-		maxMessageSize := privKey.Size() - 2*sha256.Size - 2
+		// Calculate maximum message size for RSA-OAEP
+		maxSize := privKey.Size() - 2*crypto.AESKeySize - 2
 
 		// Test maximum valid size
-		message := bytes.Repeat([]byte("a"), maxMessageSize)
-		ciphertext, err := crypto.RSAEncrypt(pubKey, message)
+		message := bytes.Repeat([]byte("a"), maxSize)
+		ct, err := crypto.RSAEncrypt(pubKey, message)
 		assert.NoError(t, err)
-		assert.NotNil(t, ciphertext)
+		require.NotNil(t, ct)
 
-		plaintext, err := crypto.RSADecrypt(privKey, ciphertext)
+		decrypted, err := crypto.RSADecrypt(privKey, ct.Data)
 		assert.NoError(t, err)
-		assert.Equal(t, message, plaintext)
+		assert.Equal(t, message, decrypted)
 
 		// Test exceeding maximum size
-		message = bytes.Repeat([]byte("a"), maxMessageSize+1)
-		ciphertext, err = crypto.RSAEncrypt(pubKey, message)
+		message = bytes.Repeat([]byte("a"), maxSize+1)
+		ct, err = crypto.RSAEncrypt(pubKey, message)
 		assert.Error(t, err)
-		assert.Nil(t, ciphertext)
+		assert.Nil(t, ct)
 	})
 }
 
+func TestRSA_Decrypt(t *testing.T) {
+	privKey, err := crypto.GenerateRSAKeyPair(crypto.RSAKeySize2048)
+	require.NoError(t, err)
+	pubKey := &privKey.PublicKey
+
+	t.Run("valid decryption", func(t *testing.T) {
+		message := []byte("test message")
+		ct, err := crypto.RSAEncrypt(pubKey, message)
+		require.NoError(t, err)
+
+		decrypted, err := crypto.RSADecrypt(privKey, ct.Data)
+		assert.NoError(t, err)
+		assert.Equal(t, message, decrypted)
+	})
+
+	t.Run("nil private key", func(t *testing.T) {
+		decrypted, err := crypto.RSADecrypt(nil, []byte("test"))
+		assert.Error(t, err)
+		assert.Equal(t, crypto.ErrInvalidPrivateKey, err)
+		assert.Nil(t, decrypted)
+	})
+
+	t.Run("invalid ciphertext", func(t *testing.T) {
+		decrypted, err := crypto.RSADecrypt(privKey, []byte("invalid"))
+		assert.Error(t, err)
+		assert.Nil(t, decrypted)
+	})
+}

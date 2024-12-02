@@ -103,17 +103,28 @@ func ImportRSAPublicKey(derBytes []byte) (*rsa.PublicKey, error) {
 }
 
 // RSAEncrypt encrypts a message using RSA-OAEP-SHA256
-func RSAEncrypt(key *rsa.PublicKey, message []byte) ([]byte, error) {
+func RSAEncrypt(key *rsa.PublicKey, message []byte) (*Ciphertext, error) {
 	if key == nil {
 		return nil, ErrInvalidPublicKey
 	}
 
-	return rsa.EncryptOAEP(
+	encData, err := rsa.EncryptOAEP(
 		sha256.New(),
 		rand.Reader,
 		key,
 		message,
 		nil, // No label used
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// RSA-OAEP doesn't use nonce/tag, but we maintain Ciphertext structure
+	// with all data in the Data field for consistency
+	return NewCiphertext(
+		make([]byte, NonceSize), // Empty nonce
+		encData,                 // Encrypted data
+		make([]byte, TagSize),   // Empty tag
 	)
 }
 
