@@ -14,6 +14,43 @@
   - [x] Memory protection through Clear()
   - [x] Full test coverage
 
+## Test Standardization
+- [ ] pbkdf2_test.go updates:
+  - [ ] Rename `TestGenerateSalt` to `TestPBKDF2_GenerateSalt`
+  - [ ] Rename `TestDeriveKey` to `TestPBKDF2_DeriveKey`
+  - [ ] Convert to table-driven tests where appropriate
+  - [ ] Standardize subtest naming
+  
+- [ ] secure_wipe_test.go updates:
+  - [ ] Rename `TestSecureWipe` to `TestMemory_SecureWipe`
+  - [ ] Add table-driven tests for different input sizes
+  - [ ] Add more edge cases
+
+- [ ] aes_gcm_test.go updates:
+  - [ ] Rename `TestAESGenerateKey` to `TestAES_GenerateKey`
+  - [ ] Rename `TestAESGenerateNonce` to `TestAES_GenerateNonce`
+  - [ ] Rename `TestAESEncryptDecrypt` to `TestAES_EncryptDecrypt`
+  - [ ] Improve test organization with logical grouping
+
+- [ ] master_key_test.go updates:
+  - [ ] Add more table-driven tests
+  - [ ] Standardize subtest naming
+  - [ ] Improve error case coverage
+
+- [ ] rsa_test.go updates:
+  - [ ] Improve test grouping
+  - [ ] Standardize error testing patterns
+  - [ ] Add missing edge cases
+
+- [ ] algorithm_test.go updates:
+  - [ ] Convert simple tests to table-driven format
+  - [ ] Add negative test cases
+
+- [ ] key_pair_test.go updates:
+  - [ ] Improve test organization
+  - [ ] Add more edge cases
+  - [ ] Standardize setup/teardown patterns
+
 ## Next Steps
 
 ### 1. Key Management Structures

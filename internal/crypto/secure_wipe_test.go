@@ -14,4 +14,3 @@ func TestSecureWipe(t *testing.T) {
 	crypto.SecureWipe(buf)
 	assert.Equal(t, expected, buf, "Buffer should be wiped to all zeros")
 }
-
