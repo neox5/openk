@@ -2,18 +2,9 @@ package kms
 
 import (
 	"crypto/rsa"
-	"errors"
 	"time"
 
 	"github.com/neox5/openk/internal/crypto"
-)
-
-var (
-	ErrInvalidKeyPair  = errors.New("invalid key pair")
-	ErrEmptyPrivateKey = errors.New("private key data is empty")
-	ErrKeyRevoked      = errors.New("key pair has been revoked")
-	ErrNilEncrypter    = errors.New("encrypter cannot be nil")
-	ErrNilDecrypter    = errors.New("decrypter cannot be nil")
 )
 
 // InitialKeyPair represents a newly generated key pair before server storage
