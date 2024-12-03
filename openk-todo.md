@@ -15,41 +15,46 @@
   - [x] Full test coverage
 
 ## Test Standardization
-- [ ] pbkdf2_test.go updates:
-  - [ ] Rename `TestGenerateSalt` to `TestPBKDF2_GenerateSalt`
-  - [ ] Rename `TestDeriveKey` to `TestPBKDF2_DeriveKey`
-  - [ ] Convert to table-driven tests where appropriate
-  - [ ] Standardize subtest naming
-  
-- [ ] secure_wipe_test.go updates:
-  - [ ] Rename `TestSecureWipe` to `TestMemory_SecureWipe`
-  - [ ] Add table-driven tests for different input sizes
-  - [ ] Add more edge cases
+- [x] pbkdf2_test.go updates:
+  - [x] Rename `TestGenerateSalt` to `TestPBKDF2_GenerateSalt`
+  - [x] Rename `TestDeriveKey` to `TestPBKDF2_DeriveKey`
+  - [x] Convert to table-driven tests
+  - [x] Standardize subtest naming
+  - [x] Review with new TESTING_GUIDE
 
-- [ ] aes_gcm_test.go updates:
-  - [ ] Rename `TestAESGenerateKey` to `TestAES_GenerateKey`
-  - [ ] Rename `TestAESGenerateNonce` to `TestAES_GenerateNonce`
-  - [ ] Rename `TestAESEncryptDecrypt` to `TestAES_EncryptDecrypt`
-  - [ ] Improve test organization with logical grouping
+- [x] secure_wipe_test.go updates:
+  - [x] Rename `TestSecureWipe` to `TestMemory_SecureWipe`
+  - [x] Add table-driven tests for different input sizes
+  - [x] Add more edge cases
+  - [x] Focus tests on zero-verification only
+  - [x] Review with new TESTING_GUIDE
 
-- [ ] master_key_test.go updates:
-  - [ ] Add more table-driven tests
-  - [ ] Standardize subtest naming
-  - [ ] Improve error case coverage
+- [x] aes_gcm_test.go updates:
+  - [x] Rename `TestAESGenerateKey` to `TestAES_GenerateKey`
+  - [x] Rename `TestAESGenerateNonce` to `TestAES_GenerateNonce`
+  - [x] Rename `TestAESEncryptDecrypt` to `TestAES_EncryptDecrypt`
+  - [x] Improve test organization with logical grouping
+  - [x] Review with new TESTING_GUIDE
 
-- [ ] rsa_test.go updates:
-  - [ ] Improve test grouping
-  - [ ] Standardize error testing patterns
-  - [ ] Add missing edge cases
+- [x] master_key_test.go updates:
+  - [x] Add more table-driven tests
+  - [x] Standardize subtest naming
+  - [x] Improve error case coverage
+  - [x] Review with new TESTING_GUIDE
 
-- [ ] algorithm_test.go updates:
-  - [ ] Convert simple tests to table-driven format
-  - [ ] Add negative test cases
+- [x] rsa_test.go updates:
+  - [x] Improve test grouping
+  - [x] Standardize error testing patterns
+  - [x] Add missing edge cases
 
-- [ ] key_pair_test.go updates:
-  - [ ] Improve test organization
-  - [ ] Add more edge cases
-  - [ ] Standardize setup/teardown patterns
+- [x] algorithm_test.go updates:
+  - [x] Convert simple tests to table-driven format
+  - [x] Add negative test cases
+
+- [x] key_pair_test.go updates:
+  - [x] Improve test organization
+  - [x] Add more edge cases
+  - [x] Standardize setup/teardown patterns
 
 ## Next Steps
 
@@ -79,6 +84,6 @@
 - Recovery procedures
 
 ## Notes
-- Current focus: Complete key management fundamentals
+- Current focus: Complete test standardization
 - Keep zero-knowledge architecture throughout
 - Maintain interface-based design for flexibility

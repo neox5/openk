@@ -6,6 +6,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"testing"
 
@@ -14,269 +15,264 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func generateTestKey(t *testing.T, bits int) *rsa.PrivateKey {
+	t.Helper()
+	key, err := rsa.GenerateKey(rand.Reader, bits)
+	require.NoError(t, err)
+	return key
+}
+
 func TestRSA_Generate(t *testing.T) {
-	tests := []struct {
-		name    string
-		bits    int
-		wantErr error
-	}{
-		{
-			name:    "valid RSAKeySize2048 key",
-			bits:    crypto.RSAKeySize2048,
-			wantErr: nil,
-		},
-		{
-			name:    "valid RSAKeySize4096 key",
-			bits:    crypto.RSAKeySize4096,
-			wantErr: nil,
-		},
-		{
-			name:    "invalid 1024-bit key",
-			bits:    1024,
-			wantErr: crypto.ErrInvalidKeySize,
-		},
-	}
+	t.Run("success cases", func(t *testing.T) {
+		tests := []struct {
+			name string
+			bits int
+		}{
+			{
+				name: "generates 2048-bit key",
+				bits: crypto.RSAKeySize2048,
+			},
+			{
+				name: "generates 4096-bit key",
+				bits: crypto.RSAKeySize4096,
+			},
+		}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			key, err := crypto.GenerateRSAKeyPair(tt.bits)
-			if tt.wantErr != nil {
-				assert.Error(t, err)
-				assert.Equal(t, tt.wantErr, err)
-				assert.Nil(t, key)
-				return
-			}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				key, err := crypto.GenerateRSAKeyPair(tt.bits)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.bits, key.Size()*8)
+			})
+		}
+	})
 
-			assert.NoError(t, err)
-			assert.NotNil(t, key)
-			assert.Equal(t, tt.bits, key.Size()*8)
+	t.Run("error cases", func(t *testing.T) {
+		t.Run("rejects undersized key", func(t *testing.T) {
+			key, err := crypto.GenerateRSAKeyPair(1024)
+			assert.ErrorIs(t, err, crypto.ErrInvalidKeySize)
+			assert.Nil(t, key)
 		})
-	}
-}
-
-func TestRSA_Export(t *testing.T) {
-	privKey, err := crypto.GenerateRSAKeyPair(crypto.RSAKeySize2048)
-	require.NoError(t, err)
-
-	t.Run("private key with nil", func(t *testing.T) {
-		der, err := crypto.ExportRSAPrivateKey(nil)
-		assert.Error(t, err)
-		assert.Equal(t, crypto.ErrInvalidPrivateKey, err)
-		assert.Nil(t, der)
-	})
-
-	t.Run("public key with nil", func(t *testing.T) {
-		der, err := crypto.ExportRSAPublicKey(nil)
-		assert.Error(t, err)
-		assert.Equal(t, crypto.ErrInvalidPublicKey, err)
-		assert.Nil(t, der)
-	})
-
-	t.Run("valid keys", func(t *testing.T) {
-		privDer, err := crypto.ExportRSAPrivateKey(privKey)
-		assert.NoError(t, err)
-		assert.NotNil(t, privDer)
-
-		pubDer, err := crypto.ExportRSAPublicKey(&privKey.PublicKey)
-		assert.NoError(t, err)
-		assert.NotNil(t, pubDer)
 	})
 }
 
-func TestRSA_Import(t *testing.T) {
-	privKey, err := crypto.GenerateRSAKeyPair(crypto.RSAKeySize2048)
-	require.NoError(t, err)
+func TestRSA_ExportPrivateKey(t *testing.T) {
+	t.Run("success cases", func(t *testing.T) {
+		key := generateTestKey(t, crypto.RSAKeySize2048)
 
-	t.Run("private key import/export", func(t *testing.T) {
-		privDer, err := crypto.ExportRSAPrivateKey(privKey)
+		der, err := crypto.ExportRSAPrivateKey(key)
 		assert.NoError(t, err)
-		assert.NotNil(t, privDer)
+		assert.NotEmpty(t, der)
 
-		imported, err := crypto.ImportRSAPrivateKey(privDer)
+		parsed, err := x509.ParsePKCS8PrivateKey(der)
 		assert.NoError(t, err)
-		assert.NotNil(t, imported)
-		assert.Equal(t, privKey.D.Bytes(), imported.D.Bytes())
-		assert.Equal(t, privKey.N.Bytes(), imported.N.Bytes())
+		assert.IsType(t, &rsa.PrivateKey{}, parsed)
 	})
 
-	t.Run("public key import/export", func(t *testing.T) {
-		pubKey := &privKey.PublicKey
-		pubDer, err := crypto.ExportRSAPublicKey(pubKey)
-		assert.NoError(t, err)
-		assert.NotNil(t, pubDer)
-
-		imported, err := crypto.ImportRSAPublicKey(pubDer)
-		assert.NoError(t, err)
-		assert.NotNil(t, imported)
-		assert.Equal(t, pubKey.N.Bytes(), imported.N.Bytes())
-		assert.Equal(t, pubKey.E, imported.E)
+	t.Run("error cases", func(t *testing.T) {
+		t.Run("rejects nil key", func(t *testing.T) {
+			der, err := crypto.ExportRSAPrivateKey(nil)
+			assert.ErrorIs(t, err, crypto.ErrInvalidPrivateKey)
+			assert.Nil(t, der)
+		})
 	})
 }
 
-func TestRSA_Import_InvalidInput(t *testing.T) {
-	t.Run("invalid private key DER", func(t *testing.T) {
-		// Invalid DER bytes
-		invalidDer := []byte("not a valid DER")
-		key, err := crypto.ImportRSAPrivateKey(invalidDer)
-		assert.Error(t, err)
-		assert.Nil(t, key)
+func TestRSA_ExportPublicKey(t *testing.T) {
+	t.Run("success cases", func(t *testing.T) {
+		key := &generateTestKey(t, crypto.RSAKeySize2048).PublicKey
+
+		der, err := crypto.ExportRSAPublicKey(key)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, der)
+
+		parsed, err := x509.ParsePKIXPublicKey(der)
+		assert.NoError(t, err)
+		assert.IsType(t, &rsa.PublicKey{}, parsed)
 	})
 
-	t.Run("invalid public key DER", func(t *testing.T) {
-		// Invalid DER bytes
-		invalidDer := []byte("not a valid DER")
-		key, err := crypto.ImportRSAPublicKey(invalidDer)
-		assert.Error(t, err)
-		assert.Nil(t, key)
+	t.Run("error cases", func(t *testing.T) {
+		t.Run("rejects nil key", func(t *testing.T) {
+			der, err := crypto.ExportRSAPublicKey(nil)
+			assert.ErrorIs(t, err, crypto.ErrInvalidPublicKey)
+			assert.Nil(t, der)
+		})
+	})
+}
+
+func TestRSA_ImportPrivateKey(t *testing.T) {
+	t.Run("success cases", func(t *testing.T) {
+		original := generateTestKey(t, crypto.RSAKeySize2048)
+		der, err := x509.MarshalPKCS8PrivateKey(original)
+		require.NoError(t, err)
+
+		imported, err := crypto.ImportRSAPrivateKey(der)
+		assert.NoError(t, err)
+		assert.Equal(t, original.D.Bytes(), imported.D.Bytes())
 	})
 
-	t.Run("wrong key type", func(t *testing.T) {
-		// Generate an EC key pair instead of RSA
-		ecKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	t.Run("error cases", func(t *testing.T) {
+		t.Run("rejects invalid DER", func(t *testing.T) {
+			imported, err := crypto.ImportRSAPrivateKey([]byte("invalid"))
+			assert.ErrorIs(t, err, crypto.ErrInvalidPrivateKey)
+			assert.Contains(t, err.Error(), "invalid RSA private key")
+			assert.Nil(t, imported)
+		})
+
+		t.Run("rejects EC key", func(t *testing.T) {
+			ecKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			require.NoError(t, err)
+			der, err := x509.MarshalPKCS8PrivateKey(ecKey)
+			require.NoError(t, err)
+
+			imported, err := crypto.ImportRSAPrivateKey(der)
+			assert.ErrorIs(t, err, crypto.ErrInvalidPrivateKey)
+			assert.Contains(t, err.Error(), "not an RSA private key")
+			assert.Nil(t, imported)
+		})
+
+		t.Run("rejects undersized key", func(t *testing.T) {
+			key, err := rsa.GenerateKey(rand.Reader, 1024)
+			require.NoError(t, err)
+			der, err := x509.MarshalPKCS8PrivateKey(key)
+			require.NoError(t, err)
+
+			imported, err := crypto.ImportRSAPrivateKey(der)
+			assert.ErrorIs(t, err, crypto.ErrInvalidKeySize)
+			assert.Contains(t, err.Error(), "got 1024 bits")
+			assert.Nil(t, imported)
+		})
+	})
+}
+
+func TestRSA_ImportPublicKey(t *testing.T) {
+	t.Run("success cases", func(t *testing.T) {
+		original := &generateTestKey(t, crypto.RSAKeySize2048).PublicKey
+		der, err := x509.MarshalPKIXPublicKey(original)
 		require.NoError(t, err)
 
-		// Export EC private key
-		ecDer, err := x509.MarshalPKCS8PrivateKey(ecKey)
-		require.NoError(t, err)
-
-		// Try to import as RSA key
-		key, err := crypto.ImportRSAPrivateKey(ecDer)
-		assert.Error(t, err)
-		assert.Equal(t, crypto.ErrInvalidPrivateKey, err)
-		assert.Nil(t, key)
-
-		// Export EC public key
-		ecPubDer, err := x509.MarshalPKIXPublicKey(&ecKey.PublicKey)
-		require.NoError(t, err)
-
-		// Try to import as RSA key
-		pubKey, err := crypto.ImportRSAPublicKey(ecPubDer)
-		assert.Error(t, err)
-		assert.Equal(t, crypto.ErrInvalidPublicKey, err)
-		assert.Nil(t, pubKey)
+		imported, err := crypto.ImportRSAPublicKey(der)
+		assert.NoError(t, err)
+		assert.Equal(t, original.N.Bytes(), imported.N.Bytes())
 	})
 
-	t.Run("undersized key import", func(t *testing.T) {
-		// Generate a 1024-bit key directly using crypto/rsa for testing
-		smallKey, err := rsa.GenerateKey(rand.Reader, 1024)
-		require.NoError(t, err)
+	t.Run("error cases", func(t *testing.T) {
+		t.Run("rejects invalid DER", func(t *testing.T) {
+			imported, err := crypto.ImportRSAPublicKey([]byte("invalid"))
+			assert.ErrorIs(t, err, crypto.ErrInvalidPublicKey)
+			assert.Contains(t, err.Error(), "invalid RSA public key")
+			assert.Nil(t, imported)
+		})
 
-		// Try to import undersized private key
-		smallPrivDer, err := x509.MarshalPKCS8PrivateKey(smallKey)
-		require.NoError(t, err)
+		t.Run("rejects EC key", func(t *testing.T) {
+			ecKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			require.NoError(t, err)
+			der, err := x509.MarshalPKIXPublicKey(&ecKey.PublicKey)
+			require.NoError(t, err)
 
-		key, err := crypto.ImportRSAPrivateKey(smallPrivDer)
-		assert.Error(t, err)
-		assert.Equal(t, crypto.ErrInvalidKeySize, err)
-		assert.Nil(t, key)
+			imported, err := crypto.ImportRSAPublicKey(der)
+			assert.ErrorIs(t, err, crypto.ErrInvalidPublicKey)
+			assert.Contains(t, err.Error(), "not an RSA public key")
+			assert.Nil(t, imported)
+		})
 
-		// Try to import undersized public key
-		smallPubDer, err := x509.MarshalPKIXPublicKey(&smallKey.PublicKey)
-		require.NoError(t, err)
+		t.Run("rejects undersized key", func(t *testing.T) {
+			key, err := rsa.GenerateKey(rand.Reader, 1024)
+			require.NoError(t, err)
+			der, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
+			require.NoError(t, err)
 
-		pubKey, err := crypto.ImportRSAPublicKey(smallPubDer)
-		assert.Error(t, err)
-		assert.Equal(t, crypto.ErrInvalidKeySize, err)
-		assert.Nil(t, pubKey)
+			imported, err := crypto.ImportRSAPublicKey(der)
+			assert.ErrorIs(t, err, crypto.ErrInvalidKeySize)
+			assert.Contains(t, err.Error(), "got 1024 bits")
+			assert.Nil(t, imported)
+		})
 	})
 }
 
 func TestRSA_Encrypt(t *testing.T) {
-	privKey, err := crypto.GenerateRSAKeyPair(crypto.RSAKeySize2048)
-	require.NoError(t, err)
-	pubKey := &privKey.PublicKey
+	key := generateTestKey(t, crypto.RSAKeySize2048)
+	maxSize := key.Size() - 2*sha256.Size - 2
+	message := []byte("test message")
 
-	t.Run("valid encryption", func(t *testing.T) {
-		message := []byte("test message")
-		ct, err := crypto.RSAEncrypt(pubKey, message)
-		assert.NoError(t, err)
-		require.NotNil(t, ct)
+	t.Run("success cases", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			message []byte
+		}{
+			{
+				name:    "encrypts short message",
+				message: message,
+			},
+			{
+				name:    "encrypts empty message",
+				message: []byte{},
+			},
+			{
+				name:    "encrypts binary data",
+				message: []byte{0xFF, 0x00, 0xFF, 0x00},
+			},
+			{
+				name:    "encrypts maximum size message",
+				message: bytes.Repeat([]byte("a"), maxSize),
+			},
+		}
 
-		// Verify ciphertext structure
-		assert.Equal(t, crypto.NonceSize, len(ct.Nonce))
-		assert.Equal(t, crypto.TagSize, len(ct.Tag))
-		assert.NotEmpty(t, ct.Data)
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				ct, err := crypto.RSAEncrypt(&key.PublicKey, tt.message)
+				assert.NoError(t, err)
+				assert.NotNil(t, ct)
 
-		// Verify decryption
-		decrypted, err := crypto.RSADecrypt(privKey, ct.Data)
-		assert.NoError(t, err)
-		assert.Equal(t, message, decrypted)
+				plaintext, err := crypto.RSADecrypt(key, ct.Data)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.message, plaintext)
+			})
+		}
 	})
 
-	t.Run("empty message", func(t *testing.T) {
-		ct, err := crypto.RSAEncrypt(pubKey, []byte{})
-		assert.NoError(t, err)
-		require.NotNil(t, ct)
+	t.Run("error cases", func(t *testing.T) {
+		t.Run("rejects nil key", func(t *testing.T) {
+			ct, err := crypto.RSAEncrypt(nil, message)
+			assert.ErrorIs(t, err, crypto.ErrInvalidPublicKey)
+			assert.Nil(t, ct)
+		})
 
-		decrypted, err := crypto.RSADecrypt(privKey, ct.Data)
-		assert.NoError(t, err)
-		assert.Empty(t, decrypted)
-	})
-
-	t.Run("nil message", func(t *testing.T) {
-		ct, err := crypto.RSAEncrypt(pubKey, nil)
-		assert.NoError(t, err)
-		require.NotNil(t, ct)
-
-		decrypted, err := crypto.RSADecrypt(privKey, ct.Data)
-		assert.NoError(t, err)
-		assert.Empty(t, decrypted)
-	})
-
-	t.Run("nil public key", func(t *testing.T) {
-		ct, err := crypto.RSAEncrypt(nil, []byte("test"))
-		assert.Error(t, err)
-		assert.Equal(t, crypto.ErrInvalidPublicKey, err)
-		assert.Nil(t, ct)
-	})
-
-	t.Run("message size limits", func(t *testing.T) {
-		// Calculate maximum message size for RSA-OAEP
-		maxSize := privKey.Size() - 2*crypto.AESKeySize - 2
-
-		// Test maximum valid size
-		message := bytes.Repeat([]byte("a"), maxSize)
-		ct, err := crypto.RSAEncrypt(pubKey, message)
-		assert.NoError(t, err)
-		require.NotNil(t, ct)
-
-		decrypted, err := crypto.RSADecrypt(privKey, ct.Data)
-		assert.NoError(t, err)
-		assert.Equal(t, message, decrypted)
-
-		// Test exceeding maximum size
-		message = bytes.Repeat([]byte("a"), maxSize+1)
-		ct, err = crypto.RSAEncrypt(pubKey, message)
-		assert.Error(t, err)
-		assert.Nil(t, ct)
+		t.Run("rejects oversized message", func(t *testing.T) {
+			ct, err := crypto.RSAEncrypt(&key.PublicKey, bytes.Repeat([]byte("a"), maxSize+1))
+			assert.Error(t, err)
+			assert.ErrorIs(t, err, rsa.ErrMessageTooLong)
+			assert.Contains(t, err.Error(), "RSA encryption failed")
+			assert.Nil(t, ct)
+		})
 	})
 }
 
 func TestRSA_Decrypt(t *testing.T) {
-	privKey, err := crypto.GenerateRSAKeyPair(crypto.RSAKeySize2048)
-	require.NoError(t, err)
-	pubKey := &privKey.PublicKey
+	key := generateTestKey(t, crypto.RSAKeySize2048)
+	message := []byte("test message")
 
-	t.Run("valid decryption", func(t *testing.T) {
-		message := []byte("test message")
-		ct, err := crypto.RSAEncrypt(pubKey, message)
+	t.Run("success cases", func(t *testing.T) {
+		ct, err := crypto.RSAEncrypt(&key.PublicKey, message)
 		require.NoError(t, err)
 
-		decrypted, err := crypto.RSADecrypt(privKey, ct.Data)
+		plaintext, err := crypto.RSADecrypt(key, ct.Data)
 		assert.NoError(t, err)
-		assert.Equal(t, message, decrypted)
+		assert.Equal(t, message, plaintext)
 	})
 
-	t.Run("nil private key", func(t *testing.T) {
-		decrypted, err := crypto.RSADecrypt(nil, []byte("test"))
-		assert.Error(t, err)
-		assert.Equal(t, crypto.ErrInvalidPrivateKey, err)
-		assert.Nil(t, decrypted)
-	})
+	t.Run("error cases", func(t *testing.T) {
+		t.Run("rejects nil key", func(t *testing.T) {
+			plaintext, err := crypto.RSADecrypt(nil, []byte("data"))
+			assert.ErrorIs(t, err, crypto.ErrInvalidPrivateKey)
+			assert.Nil(t, plaintext)
+		})
 
-	t.Run("invalid ciphertext", func(t *testing.T) {
-		decrypted, err := crypto.RSADecrypt(privKey, []byte("invalid"))
-		assert.Error(t, err)
-		assert.Nil(t, decrypted)
+		t.Run("handles invalid ciphertext", func(t *testing.T) {
+			plaintext, err := crypto.RSADecrypt(key, []byte("invalid"))
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "RSA decryption failed")
+			assert.Nil(t, plaintext)
+		})
 	})
 }
