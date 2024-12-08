@@ -9,8 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Helper for master key creation in master_key_test.go
-
 func TestKeyPair_Generate(t *testing.T) {
 	unsealed, err := kms.GenerateKeyPair()
 	require.NoError(t, err)
@@ -26,6 +24,40 @@ func TestKeyPair_Generate(t *testing.T) {
 	decrypted, err := unsealed.Decrypt(ct)
 	require.NoError(t, err)
 	assert.Equal(t, plaintext, decrypted)
+}
+
+func TestKeyPair_ID(t *testing.T) {
+	t.Run("returns empty for new keypair", func(t *testing.T) {
+		unsealed, err := kms.GenerateKeyPair()
+		require.NoError(t, err)
+		defer unsealed.Clear()
+
+		assert.Empty(t, unsealed.ID())
+	})
+	t.Run("returns valid ID after unsealing", func(t *testing.T) {
+		// Setup: create and seal a keypair
+		masterKey := setupMasterKey(t)
+		unsealed, err := kms.GenerateKeyPair()
+		require.NoError(t, err)
+		initial, err := unsealed.InitialSeal(masterKey)
+		require.NoError(t, err)
+
+		id := "123e4567-e89b-12d3-a456-426614174000" // Valid UUID
+		stored := &kms.KeyPair{
+			ID:         id,
+			Algorithm:  initial.Algorithm,
+			PublicKey:  initial.PublicKey,
+			PrivateKey: initial.PrivateKey,
+			Created:    initial.Created,
+			State:      initial.State,
+		}
+
+		unsealed, err = stored.Unseal(masterKey)
+		require.NoError(t, err)
+		defer unsealed.Clear()
+
+		assert.Equal(t, "keypair-"+id, unsealed.ID())
+	})
 }
 
 func TestKeyPair_InitialSeal(t *testing.T) {
@@ -71,8 +103,9 @@ func TestKeyPair_Unseal(t *testing.T) {
 	initial, err := unsealed.InitialSeal(masterKey)
 	require.NoError(t, err)
 
+	id := "123e4567-e89b-12d3-a456-426614174000" // Valid UUID
 	stored := &kms.KeyPair{
-		ID:         "test-id",
+		ID:         id,
 		Algorithm:  initial.Algorithm,
 		PublicKey:  initial.PublicKey,
 		PrivateKey: initial.PrivateKey,
@@ -115,7 +148,7 @@ func TestKeyPair_Unseal(t *testing.T) {
 				name: "with destroyed state",
 				setup: func() (*kms.KeyPair, crypto.Decrypter) {
 					destroyed := &kms.KeyPair{
-						ID:         stored.ID,
+						ID:         id, // Using the same valid UUID
 						Algorithm:  stored.Algorithm,
 						PublicKey:  stored.PublicKey,
 						PrivateKey: stored.PrivateKey,

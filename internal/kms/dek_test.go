@@ -19,6 +19,10 @@ func (m *mockEncrypter) Encrypt(data []byte) (*crypto.Ciphertext, error) {
 	return m.encryptFunc(data)
 }
 
+func (m *mockEncrypter) ID() string {
+	return "mockEncrypter"
+}
+
 // mockDecrypter implements crypto.Decrypter for testing
 type mockDecrypter struct {
 	decryptFunc func(*crypto.Ciphertext) ([]byte, error)
@@ -281,7 +285,7 @@ func TestDEK_Decrypt(t *testing.T) {
 func TestDEK_Clear(t *testing.T) {
 	t.Run("clears key material", func(t *testing.T) {
 		dek := generateTestDEK(t)
-		
+
 		// Verify key works before clearing
 		_, err := dek.Encrypt([]byte("test"))
 		require.NoError(t, err)

@@ -96,6 +96,10 @@ func (dk *UnsealedDEK) Encrypt(data []byte) (*crypto.Ciphertext, error) {
 	return crypto.AESEncrypt(dk.key, data)
 }
 
+func (dk *UnsealedDEK) ID() string {
+	return "dek"
+}
+
 // Decrypt performs AES-256-GCM decryption of data using the key
 func (dk *UnsealedDEK) Decrypt(ct *crypto.Ciphertext) ([]byte, error) {
 	if len(dk.key) != crypto.AESKeySize {

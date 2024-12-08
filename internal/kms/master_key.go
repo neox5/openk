@@ -21,6 +21,7 @@ var (
 type MasterKey struct {
 	key     []byte
 	authKey []byte
+	id      string // username as ID
 }
 
 func NewMasterKey() *MasterKey {
@@ -60,6 +61,9 @@ func (mk *MasterKey) Derive(password, username []byte) error {
 	mk.authKey = make([]byte, len(derived))
 	subtle.ConstantTimeCopy(1, mk.authKey, derived)
 
+	// Set ID from username
+	mk.id = string(username)
+
 	return nil
 }
 
@@ -73,6 +77,7 @@ func (mk *MasterKey) Clear() {
 		crypto.SecureWipe(mk.authKey)
 		mk.key = nil
 		mk.authKey = nil
+		mk.id = ""
 	}
 }
 
@@ -81,6 +86,10 @@ func (mk *MasterKey) Encrypt(plaintext []byte) (*crypto.Ciphertext, error) {
 		return nil, ErrKeyNotDerived
 	}
 	return crypto.AESEncrypt(mk.key, plaintext)
+}
+
+func (mk *MasterKey) ID() string {
+	return mk.id
 }
 
 func (mk *MasterKey) Decrypt(ct *crypto.Ciphertext) ([]byte, error) {

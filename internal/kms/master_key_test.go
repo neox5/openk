@@ -12,17 +12,16 @@ import (
 
 // Common test values
 var (
-	validPassword = []byte("test-password")
-	validUsername = []byte("test-user")
+    validPassword = []byte("test-password")
+    validUsername = []byte("test-user")
 )
-
 // Helper function for test setup
 func setupMasterKey(t *testing.T) *kms.MasterKey {
-	t.Helper()
-	mk := kms.NewMasterKey()
-	err := mk.Derive(validPassword, validUsername)
-	require.NoError(t, err)
-	return mk
+    t.Helper()
+    mk := kms.NewMasterKey()
+    err := mk.Derive(validPassword, validUsername)
+    require.NoError(t, err)
+    return mk
 }
 
 func TestMasterKey_New(t *testing.T) {

@@ -16,11 +16,11 @@
 ## KMS Package Implementation
 
 ### 1. Core Interface Updates
-- [ ] Update Encrypter interface with ID() method
-- [ ] Update all existing Encrypter implementations:
-  - [ ] MasterKey
-  - [ ] UnsealedKeyPair
-  - [ ] Add tests for ID functionality
+- [x] Update Encrypter interface with ID() method
+- [x] Update all existing Encrypter implementations:
+  - [x] MasterKey
+  - [x] UnsealedKeyPair
+  - [x] Add tests for ID functionality
 
 ### 2. DEK Implementation
 - [ ] Create basic DEK structures
