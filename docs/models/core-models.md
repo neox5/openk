@@ -16,39 +16,40 @@ type Ciphertext struct {
     Tag   []byte // 128 bits
 }
 
-// KeyPair represents an asymmetric RSA key pair used for key wrapping
+// KeyPair represents an asymmetric RSA key pair
 type KeyPair struct {
-    ID                 string     
-    Algorithm         Algorithm  // AlgorithmRSAOAEPSHA256
-    PublicKey         []byte     // X.509/SPKI format
-    PrivateKey        Ciphertext // Encrypted with Master Key
-    RecoveryPrivateKey Ciphertext // Encrypted with Recovery Key
-    Created           time.Time
-    State             KeyState   
+    ID         string     
+    Algorithm  Algorithm  // AlgorithmRSAOAEPSHA256
+    PublicKey  []byte     // X.509/SPKI format
+    PrivateKey Ciphertext // Encrypted by DEK
+    Created    time.Time
+    State      KeyState   
+    DEKID      string     // References protecting DEK
 }
 
-// DEK (Data Encryption Key) is a symmetric key that encrypts data
+// DEK (Data Encryption Key) is a symmetric key used for encryption
 type DEK struct {
     ID        string    
     Algorithm Algorithm // AlgorithmAESGCM256
-    Key       []byte    // In memory only, wrapped by KeyPair
     Created   time.Time
-    State     KeyState  
+    State     KeyState
+    // Note: Envelopes managed separately in storage for flexibility
 }
 
-// Envelope wraps a DEK encrypted with a KeyPair's public key
+// Envelope wraps a DEK using an encryption provider
 type Envelope struct {
-    ID        string     
-    Algorithm Algorithm  // AlgorithmRSAOAEPSHA256
-    Key       Ciphertext // DEK encrypted with recipient's public key
-    Created   time.Time
-    State     KeyState  
-    OwnerID   string    // References recipient's KeyPair.ID
+    ID          string
+    DEKID       string     // References wrapped DEK
+    Algorithm   Algorithm  // AlgorithmRSAOAEPSHA256 or others
+    Key         Ciphertext // DEK encrypted by provider
+    Created     time.Time
+    State       KeyState
+    EncrypterID string    // References encryption provider
 }
 
-// KeyDerivation represents parameters for key derivation
+// KeyDerivation represents parameters for Master Key derivation
 type KeyDerivation struct {
-    Username     string    // Used as salt for Master Key
+    Username     string    // Used as salt
     Iterations   int       // PBKDF2 iteration count
     CreatedAt    time.Time
 }
@@ -70,8 +71,8 @@ COMMENT ON TYPE key_state IS 'KeyState: 0=Active, 1=PendingRotation, 2=Inactive,
 -- Key Derivation Parameters
 CREATE TABLE key_derivation_params (
     id          UUID PRIMARY KEY,
-    username    TEXT NOT NULL,       -- Used as salt for Master Key
-    iterations  INTEGER NOT NULL,     -- PBKDF2 iterations
+    username    TEXT NOT NULL,
+    iterations  INTEGER NOT NULL,
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -83,14 +84,12 @@ CREATE TABLE key_pairs (
     nonce       BYTEA NOT NULL,    -- Private key encryption nonce
     data        BYTEA NOT NULL,    -- Encrypted private key data
     tag         BYTEA NOT NULL,    -- Private key encryption tag
-    recovery_nonce BYTEA NOT NULL, -- Recovery private key encryption nonce
-    recovery_data  BYTEA NOT NULL, -- Recovery encrypted private key data
-    recovery_tag   BYTEA NOT NULL, -- Recovery private key encryption tag
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    state       SMALLINT NOT NULL DEFAULT 0 CHECK (state >= 0 AND state <= 3)
+    state       SMALLINT NOT NULL DEFAULT 0 CHECK (state >= 0 AND state <= 3),
+    dek_id      UUID NOT NULL REFERENCES deks(id)
 );
 
--- Data Encryption Keys (only metadata, key material in memory)
+-- Data Encryption Keys
 CREATE TABLE deks (
     id          UUID PRIMARY KEY,
     algorithm   SMALLINT NOT NULL DEFAULT 1 CHECK (algorithm >= 0 AND algorithm <= 1),
@@ -101,22 +100,22 @@ CREATE TABLE deks (
 -- Key Envelopes
 CREATE TABLE envelopes (
     id          UUID PRIMARY KEY,
-    algorithm   SMALLINT NOT NULL DEFAULT 0 CHECK (algorithm >= 0 AND algorithm <= 1),
     dek_id      UUID NOT NULL REFERENCES deks(id),
-    owner_id    UUID NOT NULL REFERENCES key_pairs(id),
+    algorithm   SMALLINT NOT NULL DEFAULT 0 CHECK (algorithm >= 0 AND algorithm <= 1),
+    encrypter_id TEXT NOT NULL,    -- References encryption provider
     nonce       BYTEA NOT NULL,    -- DEK encryption nonce
     data        BYTEA NOT NULL,    -- Encrypted DEK data
     tag         BYTEA NOT NULL,    -- DEK encryption tag
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    state       SMALLINT NOT NULL DEFAULT 0 CHECK (state >= 0 AND state <= 3),
-    UNIQUE(dek_id, owner_id)
+    state       SMALLINT NOT NULL DEFAULT 0 CHECK (state >= 0 AND state <= 3)
 );
 
 -- Indexes
 CREATE INDEX idx_key_pairs_state ON key_pairs(state);
+CREATE INDEX idx_key_pairs_dek_id ON key_pairs(dek_id);
 CREATE INDEX idx_deks_state ON deks(state);
 CREATE INDEX idx_envelopes_dek_id ON envelopes(dek_id);
-CREATE INDEX idx_envelopes_owner_id ON envelopes(owner_id);
+CREATE INDEX idx_envelopes_encrypter_id ON envelopes(encrypter_id);
 CREATE INDEX idx_envelopes_state ON envelopes(state);
 ```
 
@@ -125,8 +124,8 @@ CREATE INDEX idx_envelopes_state ON envelopes(state);
 ```
 # Key Derivation Parameters
 kd:{id} -> {
-    username: string,     # Used as salt for Master Key
-    iterations: number,   # PBKDF2 iterations
+    username: string,
+    iterations: number,
     created_at: timestamp
 }
 
@@ -137,14 +136,12 @@ kp:{id} -> {
     nonce: bytes,       # Private key encryption nonce
     data: bytes,        # Encrypted private key data
     tag: bytes,         # Private key encryption tag
-    recovery_nonce: bytes,  # Recovery private key encryption nonce
-    recovery_data: bytes,   # Recovery encrypted private key data
-    recovery_tag: bytes,    # Recovery private key encryption tag
     created_at: timestamp,
-    state: number       # 0=Active, 1=PendingRotation, 2=Inactive, 3=Destroyed
+    state: number,      # 0=Active, 1=PendingRotation, 2=Inactive, 3=Destroyed
+    dek_id: string     # Reference to protecting DEK
 }
 
-# DEKs (metadata only)
+# DEKs
 dek:{id} -> {
     algorithm: number,   # 1=AES-256-GCM
     created_at: timestamp,
@@ -153,9 +150,9 @@ dek:{id} -> {
 
 # Envelopes
 env:{id} -> {
+    dek_id: string,     # Reference to wrapped DEK
     algorithm: number,   # 0=RSA-2048-OAEP-SHA256
-    dek_id: string,     # Reference to DEK
-    owner_id: string,   # Reference to KeyPair
+    encrypter_id: string, # References encryption provider
     nonce: bytes,       # DEK encryption nonce
     data: bytes,        # Encrypted DEK data
     tag: bytes,         # DEK encryption tag
@@ -164,8 +161,8 @@ env:{id} -> {
 }
 
 # Indexes
-dek_envelopes:{dek_id} -> Set[env_id]    # Envelope IDs for DEK
-keypair_envelopes:{owner_id} -> Set[env_id]  # Envelope IDs for KeyPair
+dek_envelopes:{dek_id} -> Set[env_id]          # Envelope IDs for DEK
+encrypter_envelopes:{encrypter_id} -> Set[env_id]  # Envelope IDs for encrypter
 ```
 
 ### Document (MongoDB)
@@ -174,8 +171,8 @@ keypair_envelopes:{owner_id} -> Set[env_id]  # Envelope IDs for KeyPair
 // Key Derivation Parameters Collection
 {
     _id: UUID,
-    username: String,     // Used as salt for Master Key
-    iterations: Number,   // PBKDF2 iterations
+    username: String,
+    iterations: Number,
     createdAt: Timestamp
 }
 
@@ -185,45 +182,45 @@ keypair_envelopes:{owner_id} -> Set[env_id]  # Envelope IDs for KeyPair
     algorithm: Number,  // 0=RSA-2048-OAEP-SHA256
     publicKey: Binary,  // X.509/SPKI format
     private: {
-        nonce: Binary,
-        data: Binary,
-        tag: Binary
-    },
-    recoveryPrivate: {
-        nonce: Binary,
+        nonce: Binary,  // Private key encryption 
         data: Binary,
         tag: Binary
     },
     createdAt: Timestamp,
-    state: Number      // 0=Active, 1=PendingRotation, 2=Inactive, 3=Destroyed
+    state: Number,      // 0=Active, 1=PendingRotation, 2=Inactive, 3=Destroyed
+    dekId: UUID        // References protecting DEK
 }
 
-// DEKs Collection (metadata only)
+// DEKs Collection
 {
     _id: UUID,
     algorithm: Number,  // 1=AES-256-GCM
     createdAt: Timestamp,
     state: Number,     // 0=Active, 1=PendingRotation, 2=Inactive, 3=Destroyed
-    // Envelopes embedded for efficient access
-    envelopes: [{
-        id: UUID,
-        algorithm: Number,  // 0=RSA-2048-OAEP-SHA256
-        ownerId: UUID,     // References KeyPair._id
-        key: {
-            nonce: Binary,
-            data: Binary,
-            tag: Binary
-        },
-        createdAt: Timestamp,
-        state: Number      // 0=Active, 1=PendingRotation, 2=Inactive, 3=Destroyed
-    }]
+}
+
+// Envelopes Collection
+{
+    _id: UUID,
+    dekId: UUID,       // References wrapped DEK
+    algorithm: Number, // Encryption algorithm used
+    encrypterId: String, // References encryption provider
+    key: {
+        nonce: Binary,
+        data: Binary,
+        tag: Binary
+    },
+    createdAt: Timestamp,
+    state: Number     // 0=Active, 1=PendingRotation, 2=Inactive, 3=Destroyed
 }
 
 // Indexes
 db.keyPairs.createIndex({ "state": 1 });
+db.keyPairs.createIndex({ "dekId": 1 });
 db.deks.createIndex({ "state": 1 });
-db.deks.createIndex({ "envelopes.ownerId": 1 });
-db.deks.createIndex({ "envelopes.state": 1 });
+db.envelopes.createIndex({ "dekId": 1 });
+db.envelopes.createIndex({ "encrypterId": 1 });
+db.envelopes.createIndex({ "state": 1 });
 ```
 
 ## Notes
@@ -239,14 +236,20 @@ db.deks.createIndex({ "envelopes.state": 1 });
    - 3: Destroyed
 
 3. **Storage Considerations**
-   - Master Key and Auth Key never stored
-   - Only derivation parameters are persisted
+   - Master Key never stored
+   - Only derivation parameters persisted
    - SQL uses SMALLINT with CHECK constraints
    - Redis and MongoDB use numeric values
    - All backends should validate values on write
 
 4. **Memory Protection**
    - Key material cleared after use
-   - Master Key cleared after KeyPair operations
+   - Master Key cleared after operations
    - Auth Key cleared after session establishment
    - Secure memory wiping when available
+
+5. **Relationship Management**
+   - DEK to Envelope is one-to-many
+   - KeyPair references protecting DEK
+   - Envelope references both DEK and encryption provider
+   - Encryption provider ID may reference different entity types

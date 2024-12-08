@@ -1,7 +1,7 @@
 # ADR-005: Secret Management Encryption Architecture
 
 ## Status
-Revised (supersedes original version)
+Revised (supersedes previous version)
 
 ## Context
 Following ADR-002, ADR-003, and ADR-004, we need to define a comprehensive encryption architecture that ensures end-to-end encryption (E2EE) while maintaining flexibility in authentication methods and supporting technical clients. Based on implementation experience and industry standards review, we've revised our approach to key management and identity.
@@ -13,24 +13,19 @@ Following ADR-002, ADR-003, and ADR-004, we need to define a comprehensive encry
 #### 1.1 Key Hierarchy
 This ADR builds on ADR-009 (Key Derivation Architecture) and crypto-spec.md:
 
-1. Authentication Layer
+1. Authentication & Protection Layer
    - User Credentials → Master Key (PBKDF2)
-   - Purely for authentication
+   - Used for both authentication and key protection
    - Rotates with password changes
+   - Protected in memory, never stored
 
-2. Protection Layer
-   - Independent KEK(s) (via PBKDF2 or external)
-   - Storage protection focus
-   - Independent rotation cycle
-   - Multiple active keys possible
-
-3. Identity Layer
+2. Identity Layer
    - Long-term stable KeyPair
-   - Protected by KEK(s)
+   - Protected by Master Key
    - Revocation rather than rotation
    - Trust anchor for system
 
-4. Data Protection Layer
+3. Data Protection Layer
    - Random DEK generation
    - Envelope-based distribution
    - Support for authorized rotation
@@ -49,86 +44,93 @@ This ADR builds on ADR-009 (Key Derivation Architecture) and crypto-spec.md:
   - Plaintext secrets
   - Encryption keys
   - Private keys
-  - KEK material
 
 ### 2. Key Management
 
 #### 2.1 Initial Setup
 1. User completes authentication
 2. User provides encryption password
-3. Client performs key derivation:
-   - Generates PBKDF2 salt for Master Key
-   - Derives Master Key using PBKDF2
-   - Either derives or receives KEK
-   - Records KEK metadata
+3. Generate PBKDF2 salt and derive Master Key
 4. Generate long-term KeyPair
-5. Encrypt private key with KEK
-6. Clear sensitive material from memory
-7. Store encrypted private key and public key
+5. Generate DEK for KeyPair protection
+6. Create Envelope for DEK using Master Key encryption
+7. Encrypt private key using DEK
+8. Clear sensitive material from memory
+9. Store encrypted private key, public key, DEK and envelope
 
 #### 2.2 Server Storage
 The server stores:
 - User authentication details
 - PBKDF2 parameters for Master Key
-- KEK metadata and parameters
+- Encrypted private key metadata
 - Public key from KeyPair
 - Encrypted private key
 - Key state information
 
-### 3. Technical Client Access
+### 3. DEK and Envelope Management
 
-#### 3.1 Client Authentication & Key Protection
+#### 3.1 Core Concepts
+* DEK (Data Encryption Key):
+  - Primary entity for data protection
+  - Random AES-256 key generation
+  - Single DEK can have multiple envelopes
+  - Manages overall key lifecycle
+
+* Envelope:
+  - DEK encrypted using an encryption provider
+  - Agnostic to encryption method (MasterKey, PublicKey, etc)
+  - Contains encryption provider identification
+  - Independent state management
+  - References parent DEK
+
+#### 3.2 Encryption Provider Identification
+* Encryption providers must identify themselves:
+  ```go
+  type Encrypter interface {
+      Encrypt(data []byte) (*Ciphertext, error)
+      ID() string  // Identifies the encryption provider
+  }
+  ```
+* ID references may point to different entity types:
+  - User records for password-based encryption
+  - KeyPair records for public key encryption
+  - External KMS provider records
+
+#### 3.3 Access Management
+* Each recipient has individual envelope
+* DEK remains unchanged
+* Access control through envelope state
+* Clear revocation process
+* Support for emergency access
+
+### 4. Technical Client Access
+
+#### 4.1 Client Authentication & Key Protection
 * Based on proven PKI patterns
 * Requires:
-  - clientId
+  - Client identification
   - High entropy credentials
   - Clear key protection strategy
-* Separation between:
-  1. Authentication credentials
-  2. Key protection mechanisms
 
-#### 3.2 Client Key Management
+#### 4.2 Client Key Management
 * Generate and protect long-term KeyPair
-* Store encrypted KeyPair on server
-* Support KEK rotation
+* Use DEK and Envelope pattern for KeyPair protection
 * Clear revocation process
 
-### 4. Secret Sharing
+### 5. Secret Management
 
-#### 4.1 Direct Sharing Process
-Uses envelope encryption as defined in crypto-spec:
-1. Owner decrypts DEK using their KeyPair
-2. Creates new Envelope for recipient
-3. Stores encrypted Envelope
-
-#### 4.2 Shared Secret Access
-* Each recipient has individual Envelope
-* Original encrypted secret unchanged
-* Recipients use their KeyPair to decrypt DEK
-* Revocation through Envelope state
-
-### 5. Key Protection Service (KPS)
-
-#### 5.1 KPS Provider Requirements
-Must support all operations defined in crypto-spec:
-- KEK management
-- Key protection
-- State management
-- Rotation capabilities
-
-#### 5.2 Implementation Options
-* Cloud provider KMS
-* Self-hosted HSM
-* OpenK's own implementation
-* Hybrid approaches
-
-All implementations must conform to crypto-spec requirements.
+### 5. Secret Management
+* Each secret protected by unique DEK
+* DEK wrapped in envelopes using authorized encryption providers
+* Original secret unchanged during sharing
+* Access managed through envelope states
+* Independent revocation per envelope
+* Clear audit trail for all operations
 
 ### 6. Security Requirements
 
 #### 6.1 Memory Protection
-* Clear Master Key after authentication
-* Protect KEK during operations
+* Clear sensitive data after use
 * No serialization of raw key material
 * Secure memory wiping
 * Memory encryption where possible
@@ -146,21 +148,21 @@ Must follow error handling requirements from crypto-spec:
 ### Positive
 * Clear separation of authentication and key protection
 * Stable cryptographic identities
-* Flexible KEK management
+* Simple and robust key hierarchy
 * Strong E2EE guarantees
 * Proven cryptographic approaches
 * Support for both user and technical clients
 * Comprehensive security model
+* Explicit recipient identification
+* Clean DEK/Envelope relationship
 
 ### Negative
-* More complex KEK management
-* Need for clear KEK rotation procedures
-* Additional state tracking requirements
-* Multiple active KEKs to manage
+* Password changes require re-encryption of KeyPair
+* Master Key must be carefully protected in memory
+* Need robust authentication flow
 
 ## Notes
 * Consider backup procedures for key material
-* Define clear KEK rotation policies
 * Document emergency procedures
 * Regular security audits required
 * Need clear revocation procedures

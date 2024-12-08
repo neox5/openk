@@ -3,26 +3,29 @@
 ## Key Hierarchy
 
 ### Core Concepts
-1. Password + Username -> Master Key (via PBKDF2)
-   - Primary key for encryption operations
-   - Uses username as deterministic salt
-   - Used for KeyPair protection
-   - Exists in memory only
+1. Master Key (via PBKDF2)
+   - Derived from password and username as salt
+   - Used for authentication and encryption
+   - Never stored, only in memory
+   - Rotates with password changes
 
-2. Master Key -> Auth Key (via PBKDF2)
-   - Used for API authentication
-   - Server-side key stretching
-   - Independent from encryption operations
-
-3. KeyPair (stable identity)
+2. KeyPair (stable identity)
    - Long-term cryptographic identity
-   - Protected by Master Key
+   - Protected by DEK/Envelope
    - Revocation rather than rotation
+   - Trust anchor for system
 
-4. DEK (via random generation)
-   - Secret encryption
-   - Wrapped via KeyPair (envelope)
-   - Supports rotation for containment
+3. DEK (Data Encryption Key)
+   - Random key generation
+   - Protected via envelopes
+   - Used for data encryption
+   - Multiple envelopes per DEK
+
+4. Envelope
+   - Wraps DEK for specific encryption provider
+   - Supports different encryption methods
+   - Independent lifecycle management
+   - Access control unit
 
 ## Core Cryptographic Components
 
@@ -44,15 +47,15 @@
 
 ### Key Derivation
 
-#### Master Key (Encryption)
+#### Master Key
 - Algorithm: PBKDF2-HMAC-SHA256
 - Salt: Username (deterministic)
 - Output Size: 256 bits (32 bytes)
 - Iteration Count: 100,000
-- Use: KeyPair protection
+- Use: Authentication and encryption
 - Rotation: On password change only
 
-#### Auth Key (Authentication)
+#### Auth Key
 - Algorithm: PBKDF2-HMAC-SHA256
 - Input: Master Key
 - Salt: "auth4openk" (constant)
@@ -81,29 +84,30 @@ type KeyPair struct {
     ID                  string     
     Algorithm           Algorithm  // AlgorithmRSA
     PublicKey           []byte     // X.509/SPKI format
-    PrivateKey          Ciphertext // Encrypted with Master Key
-    RecoveryPrivateKey  Ciphertext // Encrypted with Recovery Key
+    PrivateKey          Ciphertext // Encrypted with DEK
     Created             time.Time
     State               KeyState
+    DEKID               string    // References protecting DEK
 }
 
-// DEK (Data Encryption Key) is a symmetric key that encrypts data
+// DEK (Data Encryption Key) is a symmetric key used for encryption
 type DEK struct {
     ID        string    
     Algorithm Algorithm // AlgorithmAES
-    Key       []byte    // In memory only, wrapped by KeyPair
     Created   time.Time
     State     KeyState
+    Envelopes map[string]*Envelope // Map of envelopes by ID
 }
 
-// Envelope wraps a DEK encrypted with a KeyPair's public key
+// Envelope wraps a DEK using an encryption provider
 type Envelope struct {
-    ID        string     
-    Algorithm Algorithm  // AlgorithmRSA
-    Key       Ciphertext // DEK encrypted with recipient's public key
-    Created   time.Time
-    State     KeyState
-    OwnerID   string    // References recipient's KeyPair.ID
+    ID          string     
+    Algorithm   Algorithm  // Algorithm used for encryption
+    DEKID       string     // References wrapped DEK
+    Key         Ciphertext // Encrypted DEK
+    Created     time.Time
+    State       KeyState
+    EncrypterID string    // References encryption provider
 }
 
 type KeyState int
@@ -120,16 +124,18 @@ const (
 ### KeyPair Lifecycle
 1. **Creation**
    - Generate during user/entity initialization
-   - Protect with Master Key
+   - Generate protecting DEK
+   - Create envelope for initial access
    - Record creation metadata
 
 2. **Usage**
    - Long-term stable identity
-   - Used for DEK wrapping
+   - Used for encryption operations
    - Trust anchor for system
+   - Additional envelopes as needed
 
 3. **Protection**
-   - Encrypted with Master Key
+   - Protected by DEK/Envelope pattern
    - Clear protection requirements
    - Secure storage standards
 
@@ -143,8 +149,8 @@ const (
 ### DEK Lifecycle
 1. **Generation**
    - Random generation
-   - Envelope creation
-   - Distribution to authorized users
+   - Initial envelope creation
+   - Distribution through additional envelopes
 
 2. **Rotation Triggers**
    - Regular schedule
@@ -158,13 +164,30 @@ const (
    - Data re-encryption
    - Clean state transition
 
+## Encryption Providers
+
+### Interface Requirements
+```go
+type Encrypter interface {
+    // Encrypt encrypts data
+    Encrypt(data []byte) (*Ciphertext, error)
+    // ID returns the identifier of the encryption provider
+    ID() string
+}
+```
+
+### Provider Types
+- Password-based (Master Key)
+- Public Key (RSA)
+- External KMS integration
+- Hardware Security Modules
+
 ## Security Requirements
 
 ### Key Material Handling
-- Clear Master Key after authentication
-- Clear Auth Key after session establishment
-- Clear unwrapped private keys
-- Secure memory handling
+- Clear Master Key after operations
+- Clear DEKs after use
+- Secure memory wiping
 - Anti-swapping measures
 
 ### Error Handling
