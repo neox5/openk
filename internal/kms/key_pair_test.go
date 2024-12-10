@@ -34,6 +34,7 @@ func TestKeyPair_ID(t *testing.T) {
 
 		assert.Empty(t, unsealed.ID())
 	})
+
 	t.Run("returns valid ID after unsealing", func(t *testing.T) {
 		// Setup: create and seal a keypair
 		masterKey := setupMasterKey(t)
@@ -44,12 +45,13 @@ func TestKeyPair_ID(t *testing.T) {
 
 		id := "123e4567-e89b-12d3-a456-426614174000" // Valid UUID
 		stored := &kms.KeyPair{
-			ID:         id,
-			Algorithm:  initial.Algorithm,
-			PublicKey:  initial.PublicKey,
-			PrivateKey: initial.PrivateKey,
-			Created:    initial.Created,
-			State:      initial.State,
+			ID:          id,
+			Algorithm:   initial.Algorithm,
+			PublicKey:   initial.PublicKey,
+			PrivateKey:  initial.PrivateKey,
+			Created:     initial.Created,
+			State:       initial.State,
+			EncrypterID: initial.EncrypterID,
 		}
 
 		unsealed, err = stored.Unseal(masterKey)
@@ -64,22 +66,25 @@ func TestKeyPair_InitialSeal(t *testing.T) {
 	masterKey := setupMasterKey(t)
 
 	t.Run("success cases", func(t *testing.T) {
-		unsealed, err := kms.GenerateKeyPair()
-		require.NoError(t, err)
+		t.Run("creates valid sealed keypair", func(t *testing.T) {
+			unsealed, err := kms.GenerateKeyPair()
+			require.NoError(t, err)
 
-		initial, err := unsealed.InitialSeal(masterKey)
-		require.NoError(t, err)
-		require.NotNil(t, initial)
+			initial, err := unsealed.InitialSeal(masterKey)
+			require.NoError(t, err)
+			require.NotNil(t, initial)
 
-		assert.Equal(t, crypto.AlgorithmRSAOAEPSHA256, initial.Algorithm)
-		assert.NotEmpty(t, initial.PublicKey)
-		assert.NotNil(t, initial.PrivateKey)
-		assert.Equal(t, crypto.KeyStateActive, initial.State)
-		assert.False(t, initial.Created.IsZero())
+			assert.Equal(t, crypto.AlgorithmRSAOAEPSHA256, initial.Algorithm)
+			assert.NotEmpty(t, initial.PublicKey)
+			assert.NotNil(t, initial.PrivateKey)
+			assert.Equal(t, crypto.KeyStateActive, initial.State)
+			assert.False(t, initial.Created.IsZero())
+			assert.Equal(t, masterKey.ID(), initial.EncrypterID)
 
-		pubKey, err := crypto.ImportRSAPublicKey(initial.PublicKey)
-		assert.NoError(t, err)
-		assert.NotNil(t, pubKey)
+			pubKey, err := crypto.ImportRSAPublicKey(initial.PublicKey)
+			assert.NoError(t, err)
+			assert.NotNil(t, pubKey)
+		})
 	})
 
 	t.Run("error cases", func(t *testing.T) {
@@ -89,6 +94,17 @@ func TestKeyPair_InitialSeal(t *testing.T) {
 
 			initial, err := unsealed.InitialSeal(nil)
 			assert.ErrorIs(t, err, kms.ErrNilEncrypter)
+			assert.Nil(t, initial)
+		})
+
+		t.Run("with destroyed state", func(t *testing.T) {
+			unsealed, err := kms.GenerateKeyPair()
+			require.NoError(t, err)
+
+			unsealed.Clear() // Set to destroyed state
+
+			initial, err := unsealed.InitialSeal(masterKey)
+			assert.ErrorIs(t, err, kms.ErrKeyRevoked)
 			assert.Nil(t, initial)
 		})
 	})
@@ -105,12 +121,13 @@ func TestKeyPair_Unseal(t *testing.T) {
 
 	id := "123e4567-e89b-12d3-a456-426614174000" // Valid UUID
 	stored := &kms.KeyPair{
-		ID:         id,
-		Algorithm:  initial.Algorithm,
-		PublicKey:  initial.PublicKey,
-		PrivateKey: initial.PrivateKey,
-		Created:    initial.Created,
-		State:      initial.State,
+		ID:          id,
+		Algorithm:   initial.Algorithm,
+		PublicKey:   initial.PublicKey,
+		PrivateKey:  initial.PrivateKey,
+		Created:     initial.Created,
+		State:       initial.State,
+		EncrypterID: initial.EncrypterID,
 	}
 
 	t.Run("success cases", func(t *testing.T) {
@@ -148,16 +165,33 @@ func TestKeyPair_Unseal(t *testing.T) {
 				name: "with destroyed state",
 				setup: func() (*kms.KeyPair, crypto.Decrypter) {
 					destroyed := &kms.KeyPair{
-						ID:         id, // Using the same valid UUID
-						Algorithm:  stored.Algorithm,
-						PublicKey:  stored.PublicKey,
-						PrivateKey: stored.PrivateKey,
-						Created:    stored.Created,
-						State:      crypto.KeyStateDestroyed,
+						ID:          id,
+						Algorithm:   stored.Algorithm,
+						PublicKey:   stored.PublicKey,
+						PrivateKey:  stored.PrivateKey,
+						Created:     stored.Created,
+						State:       crypto.KeyStateDestroyed,
+						EncrypterID: stored.EncrypterID,
 					}
 					return destroyed, masterKey
 				},
 				wantErr: kms.ErrKeyRevoked,
+			},
+			{
+				name: "with mismatched decrypter ID",
+				setup: func() (*kms.KeyPair, crypto.Decrypter) {
+					mismatched := &kms.KeyPair{
+						ID:          id,
+						Algorithm:   stored.Algorithm,
+						PublicKey:   stored.PublicKey,
+						PrivateKey:  stored.PrivateKey,
+						Created:     stored.Created,
+						State:       stored.State,
+						EncrypterID: "different-id",
+					}
+					return mismatched, masterKey
+				},
+				wantErr: kms.ErrDecrypterIDMismatch,
 			},
 		}
 
@@ -196,6 +230,13 @@ func TestKeyPair_Operations(t *testing.T) {
 			decrypted, err := unsealed.Decrypt(ct)
 			assert.NoError(t, err)
 			assert.Empty(t, decrypted)
+		})
+
+		t.Run("rejects operations after destroy", func(t *testing.T) {
+			unsealed.Clear()
+			ct, err := unsealed.Encrypt([]byte("test"))
+			assert.ErrorIs(t, err, kms.ErrKeyRevoked)
+			assert.Nil(t, ct)
 		})
 	})
 

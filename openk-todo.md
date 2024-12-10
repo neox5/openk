@@ -36,20 +36,22 @@
 ## Next Up
 
 ### 1. Core Cryptography Completion
-- [ ] KeyPair Updates
-  - [ ] Update KeyPair to use DEK/Envelope for protection
-  - [ ] Modify InitialSeal to create and use DEK
-  - [ ] Update Unseal to handle DEK/Envelope pattern
-  - [ ] Update existing KeyPair tests
-  - [ ] Add new tests for DEK protection
+- [ ] Key Interface Layer
+  - [ ] Define interfaces for key persistence
+  - [ ] Add key rotation mechanisms
+  - [ ] Add revocation process
+  - [ ] Implement key usage tracking
 
 ### 2. Integration & Testing
 - [ ] Integration Tests
-  - [ ] Test end-to-end KeyPair creation with DEK
-  - [ ] Test KeyPair unsealing flow
-  - [ ] Test multiple envelopes for same DEK
-  - [ ] Test state management across components
-  - [ ] Test memory protection and cleanup
+  - [ ] State transition testing
+  - [ ] Key lifecycle scenarios
+  - [ ] Error handling validation
+  - [ ] Memory leak detection
+- [ ] Storage Integration Tests
+  - [ ] Backend interface validation
+  - [ ] Transaction handling
+  - [ ] Concurrent access testing
 
 ### 3. Storage & Authentication
 - [ ] Storage Layer Implementation
@@ -74,15 +76,6 @@
   - [ ] Real-time updates
   - [ ] Keyboard shortcuts
   - [ ] Rich secret visualization
-- [ ] Management Console
-  - [ ] System monitoring
-  - [ ] User management
-  - [ ] Audit log viewer
-  - [ ] Both TUI and web interfaces
-- [ ] Development Tools
-  - [ ] Debugging interface
-  - [ ] Performance profiling
-  - [ ] Configuration validation
 
 ### 5. Sync & Recovery
 - [ ] Device Synchronization
