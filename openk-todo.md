@@ -34,29 +34,82 @@
   - [x] Envelope
 
 ## Next Up
-1. KeyPair Updates
-   - [ ] Update KeyPair to use DEK/Envelope for protection
-   - [ ] Modify InitialSeal to create and use DEK
-   - [ ] Update Unseal to handle DEK/Envelope pattern
-   - [ ] Update existing KeyPair tests
-   - [ ] Add new tests for DEK protection
 
-2. Integration Tests
-   - [ ] Test end-to-end KeyPair creation with DEK
-   - [ ] Test KeyPair unsealing flow
-   - [ ] Test multiple envelopes for same DEK
-   - [ ] Test state management across components
-   - [ ] Test memory protection and cleanup
+### 1. Core Cryptography Completion
+- [ ] KeyPair Updates
+  - [ ] Update KeyPair to use DEK/Envelope for protection
+  - [ ] Modify InitialSeal to create and use DEK
+  - [ ] Update Unseal to handle DEK/Envelope pattern
+  - [ ] Update existing KeyPair tests
+  - [ ] Add new tests for DEK protection
 
-3. Future Considerations
-   - Storage layer implementations
-   - Authentication flows
-   - Session management
-   - Device sync protocols
-   - Recovery procedures
+### 2. Integration & Testing
+- [ ] Integration Tests
+  - [ ] Test end-to-end KeyPair creation with DEK
+  - [ ] Test KeyPair unsealing flow
+  - [ ] Test multiple envelopes for same DEK
+  - [ ] Test state management across components
+  - [ ] Test memory protection and cleanup
 
-## Notes
+### 3. Storage & Authentication
+- [ ] Storage Layer Implementation
+  - [ ] Define storage interfaces
+  - [ ] Implement PostgreSQL backend
+  - [ ] Add Redis caching support
+  - [ ] Create MongoDB adapter
+- [ ] Authentication System
+  - [ ] Implement authentication flows
+  - [ ] Add session management
+  - [ ] Support multiple auth providers
+  - [ ] MFA integration
+
+### 4. CLI Framework (from Vision)
+- [ ] Basic CLI Structure
+  - [ ] Command-line parsing
+  - [ ] Configuration management
+  - [ ] Basic CRUD operations
+  - [ ] Output formatting
+- [ ] Interactive Terminal UI (TUI)
+  - [ ] Secret browser interface
+  - [ ] Real-time updates
+  - [ ] Keyboard shortcuts
+  - [ ] Rich secret visualization
+- [ ] Management Console
+  - [ ] System monitoring
+  - [ ] User management
+  - [ ] Audit log viewer
+  - [ ] Both TUI and web interfaces
+- [ ] Development Tools
+  - [ ] Debugging interface
+  - [ ] Performance profiling
+  - [ ] Configuration validation
+
+### 5. Sync & Recovery
+- [ ] Device Synchronization
+  - [ ] Define sync protocol
+  - [ ] Implement conflict resolution
+  - [ ] Add change tracking
+  - [ ] Support offline operations
+- [ ] Recovery Procedures
+  - [ ] Implement key recovery
+  - [ ] Add emergency access
+  - [ ] Create backup systems
+  - [ ] Document recovery processes
+
+## Implementation Notes
 - Maintain zero-knowledge architecture throughout
 - Follow established memory protection patterns
 - Keep consistent error handling
 - Ensure comprehensive test coverage
+- Align with vision document priorities
+- Consider progressive complexity in feature rollout
+- Maintain focus on security fundamentals
+
+## Future Considerations
+- Performance optimization
+- Additional storage backends
+- Extended authentication methods
+- Advanced synchronization features
+- Enterprise integration patterns
+- Community contribution guidelines
+- Security audit framework

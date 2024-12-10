@@ -4,7 +4,7 @@
 Revised (supersedes previous version)
 
 ## Context
-The system needs a clear approach for deriving cryptographic keys from user credentials. Taking inspiration from proven systems like Bitwarden, we've simplified our approach while maintaining strong security properties.
+The system needs a clear approach for deriving cryptographic keys from user credentials. Taking inspiration from proven systems like Bitwarden, we implement parallel key derivation for authentication and encryption operations while maintaining strong security properties.
 
 ## Decision
 
@@ -20,56 +20,72 @@ type MasterKeyDerivation struct {
 // Master Key used for encryption operations
 MasterKey = PBKDF2(
     password,
-    username,
-    iterations
+    username,    // Used as salt
+    iterations,
+    keyLength    // 256 bits
 )
 ```
 
 #### 1.2 Auth Key Derivation
 ```go
-// Auth Key used for API authentication
+// Auth Key used for API authentication, derived in parallel
 AuthKey = PBKDF2(
-    masterKey,
-    "auth4openk",
-    100000  // Fixed server-side iterations
+    password,
+    "openk4auth",    // Constant salt
+    iterations,      // Same iteration count
+    keyLength        // 256 bits
 )
 ```
 
 ### 2. Implementation Requirements
 
-#### 2.1 Master Key Operations
+#### 2.1 Key Operations
 ```go
 type MasterKeyOps interface {
-    // DeriveKey generates master key from password
-    DeriveKey(password []byte, username string) ([]byte, error)
+    // Derive both master and auth keys from password
+    Derive(password, username []byte) error
     
-    // DeriveAuthKey generates auth key from master key
-    DeriveAuthKey(masterKey []byte) ([]byte, error)
+    // Check if keys are available
+    HasKey() bool
     
-    // ClearKey securely wipes key material
-    ClearKey(key []byte) error
+    // Clear sensitive key material
+    Clear()
+    
+    // Encrypt data using master key
+    Encrypt(data []byte) (*Ciphertext, error)
+    
+    // Decrypt data using master key
+    Decrypt(ct *Ciphertext) ([]byte, error)
+    
+    // Get derived auth key for API operations
+    GetAuthKey() ([]byte, error)
+    
+    // Get stable identifier for this encryption provider
+    ID() string
 }
 ```
 
 #### 2.2 Key Usage
-- Master Key: Encrypts/decrypts KeyPair
-- Auth Key: API authentication
-- Clear separation of concerns
-- Independent rotation cycles
+- Master Key: Primary encryption key for protecting KeyPairs
+- Auth Key: Used exclusively for API authentication
+- Independent derivation paths
+- Separate rotation cycles
 
 ### 3. Security Properties
 
 #### 3.1 Advantages
-- Deterministic salt (username)
+- Independent key derivation paths
+- Deterministic salt for master key
 - No additional salt storage needed
 - Server-side key stretching
 - Clear separation of auth/encryption
-- Proven approach (similar to Bitwarden)
+- Proven approach (follows Bitwarden model)
 
 #### 3.2 Memory Protection
-- Clear keys after use
+- Clear both keys after use
 - Secure memory wiping
 - Prevent key material swapping
+- Clear on process exit
 
 #### 3.3 Error Handling
 - Clear sensitive data on errors
@@ -77,27 +93,51 @@ type MasterKeyOps interface {
 - Rate limiting on authentication
 - Clear error messages
 
+### 4. Implementation Notes
+
+#### 4.1 Constants
+```go
+const (
+    // PBKDF2 parameters
+    DefaultIterations = 100_000
+    MasterKeySize    = 32       // 256 bits
+    AuthSalt         = "openk4auth"
+)
+```
+
+#### 4.2 Error Types
+```go
+var (
+    ErrInvalidPassword = errors.New("invalid password")
+    ErrInvalidUsername = errors.New("invalid username")
+    ErrKeyNotDerived   = errors.New("master key not derived")
+    ErrKeyAlreadySet   = errors.New("master key already set")
+)
+```
+
 ## Consequences
 
 ### Positive
-- Simpler architecture
-- Proven approach
-- No salt management needed
-- Strong security properties
+- Independent keys for auth and encryption
+- No key derivation chaining
+- Proven industry approach
+- Simple key recovery path
 - Clear separation of concerns
+- Minimal state management
 
 ### Negative
-- Username changes affect key derivation
+- Two key derivation operations required
 - Fixed to PBKDF2 for both operations
 - Server must maintain auth stretching
+- Both keys need memory protection
 
 ## Notes
 - Regular review of iteration counts
 - Consider adding parameters for quantum resistance
 - Monitor for new key derivation standards
-- Document recovery procedures
+- Document clear recovery procedures
 
 ## References
 - crypto-spec.md: Core cryptographic specifications
 - NIST SP 800-132: Key Derivation Using PBKDF
-- Bitwarden Key Derivation Model
+- Bitwarden Security Whitepaper

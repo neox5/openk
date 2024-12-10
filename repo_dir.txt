@@ -1,39 +1,48 @@
 .
 ├── docs
 │   ├── adr
-│   │   ├── core
-│   │   │   ├── 001_screte-field-format.md
-│   │   │   ├── 002_secret-management-model.md
-│   │   │   ├── 003_secret-input--processing.md
-│   │   │   └── 004_service_architecture.md
-│   │   ├── crypto
-│   │   │   ├── 005_encryption_architecture.md
-│   │   │   ├── 007_org_secret_management.md
-│   │   │   ├── 008_personal_vault_management.md
-│   │   │   └── 009_key_derivation_architecture.md
-│   │   └── privacy
-│   │       └── 006_privacy-preserving_metadata.md
-│   ├── misc
-│   │   └── openk-banner.md
+│   │   ├── 001_screte-field-format.md
+│   │   ├── 002_secret-management-model.md
+│   │   ├── 003_secret-input--processing.md
+│   │   ├── 004_service_architecture.md
+│   │   ├── 005_encryption_architecture.md
+│   │   ├── 006_privacy-preserving_metadata.md
+│   │   ├── 007_org_secret_management.md
+│   │   ├── 008_personal_vault_management.md
+│   │   ├── 009_key_derivation_architecture.md
+│   │   └── _ADR-GUIDE.md
 │   ├── models
-│   │   └── crypto-models.md
+│   │   └── core-models.md
 │   ├── specs
-│   │   └── crypto
-│   │       └── crypto-spec.md
+│   │   └── crypto-core_spec.md
 │   ├── project_description.md
-│   └── TESTING.md
+│   └── TESTING_GUIDE.md
 ├── internal
 │   ├── crypto
+│   │   ├── aes_gcm.go
+│   │   ├── aes_gcm_test.go
 │   │   ├── algorithm.go
 │   │   ├── algorithm_test.go
 │   │   ├── ciphertext.go
 │   │   ├── ciphertext_test.go
+│   │   ├── decrypter.go
+│   │   ├── encrypter.go
 │   │   ├── key_state.go
 │   │   ├── key_state_test.go
 │   │   ├── pbkdf2.go
-│   │   └── pbkdf2_test.go
-│   ├── secret
-│   └── storage
+│   │   ├── pbkdf2_test.go
+│   │   ├── rsa.go
+│   │   ├── rsa_test.go
+│   │   ├── secure_wipe.go
+│   │   └── secure_wipe_test.go
+│   ├── kms
+│   │   ├── dek.go
+│   │   ├── dek_test.go
+│   │   ├── errors.go
+│   │   ├── key_pair.go
+│   │   ├── key_pair_test.go
+│   │   ├── master_key.go
+│   │   └── master_key_test.go
 ├── go.mod
 ├── go.sum
 ├── LICENSE
