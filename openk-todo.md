@@ -41,11 +41,11 @@
 ## Next Up
 
 ### 1. Key Derivation Implementation
-- [ ] Implement KeyDerivation type in KMS package
-  - [ ] Define structures (KeyDerivation)
-  - [ ] Implement methods
-  - [ ] Add validation
-  - [ ] Add tests
+- [x] Implement KeyDerivation type in KMS package
+  - [x] Define structures (KeyDerivation)
+  - [x] Implement methods
+  - [x] Add validation
+  - [x] Add tests
 
 ### 2. Key Derivation Storage - Phase 1
 - [ ] Implement InMemoryMiniBackend for KeyDerivation
