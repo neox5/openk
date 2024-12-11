@@ -32,17 +32,99 @@
 - [x] Create Envelope structures
   - [x] InitialEnvelope
   - [x] Envelope
+- [x] Define MiniSecret type
+  - [x] Basic secret structure (key/value)
+  - [x] Three-state model (Initial/Stored/Unsealed)
+  - [x] Encryption using Encrypter interface
+  - [x] DEK tracking through EncrypterID
 
 ## Next Up
 
-### 1. Core Cryptography Completion
-- [ ] Key Interface Layer
-  - [ ] Define interfaces for key persistence
-  - [ ] Add key rotation mechanisms
-  - [ ] Add revocation process
-  - [ ] Implement key usage tracking
+### 1. Key Derivation Implementation
+- [ ] Implement KeyDerivation type in KMS package
+  - [ ] Define structures (KeyDerivation)
+  - [ ] Implement methods
+  - [ ] Add validation
+  - [ ] Add tests
 
-### 2. Integration & Testing
+### 2. Key Derivation Storage - Phase 1
+- [ ] Implement InMemoryMiniBackend for KeyDerivation
+  - [ ] StoreDerivationParams
+  - [ ] GetDerivationParams
+  - [ ] Basic transaction support
+  - [ ] Tests
+
+### 3. Server Support - Phase 1
+- [ ] Basic HTTP server implementation
+  - [ ] KeyDerivation endpoints
+  - [ ] Health check
+  - [ ] Error handling
+  - [ ] Tests
+
+### 4. CLI Support - Phase 1
+- [ ] Basic CLI implementation
+  - [ ] KeyDerivation commands
+  - [ ] Server interaction
+  - [ ] Tests
+
+### 5. Integration Testing - Phase 1
+- [ ] Test KeyDerivation/MasterKey flow
+  - [ ] End-to-end tests
+  - [ ] Error scenarios
+  - [ ] CLI interaction tests
+
+### 6. KMS Storage Implementation - Phase 2
+- [ ] Extend InMemoryMiniBackend for KMS
+  - [ ] KeyPair operations
+  - [ ] DEK operations
+  - [ ] Envelope operations
+  - [ ] Transaction support
+  - [ ] Comprehensive tests
+
+### 7. Server Support - Phase 2
+- [ ] Extend HTTP server
+  - [ ] KMS endpoints
+  - [ ] Error handling
+  - [ ] Tests
+
+### 8. CLI Support - Phase 2
+- [ ] Extend CLI
+  - [ ] KMS commands
+  - [ ] Key management operations
+  - [ ] Tests
+
+### 9. Integration Testing - Phase 2
+- [ ] Test complete KMS flow
+  - [ ] End-to-end tests
+  - [ ] Error scenarios
+  - [ ] CLI interaction tests
+
+### 10. Secret Storage Implementation - Phase 3
+- [ ] Extend InMemoryMiniBackend for MiniSecret
+  - [ ] Secret operations
+  - [ ] Transaction support
+  - [ ] Tests
+
+### 11. Server Support - Phase 3
+- [ ] Extend HTTP server
+  - [ ] Secret endpoints
+  - [ ] Error handling
+  - [ ] Tests
+
+### 12. CLI Support - Phase 3
+- [ ] Extend CLI
+  - [ ] Secret management commands
+  - [ ] Tests
+
+### 13. Integration Testing - Phase 3
+- [ ] Test complete system
+  - [ ] End-to-end tests
+  - [ ] Performance tests
+  - [ ] Security validation
+
+### Future Work
+
+#### Integration & Testing
 - [ ] Integration Tests
   - [ ] State transition testing
   - [ ] Key lifecycle scenarios
@@ -53,8 +135,8 @@
   - [ ] Transaction handling
   - [ ] Concurrent access testing
 
-### 3. Storage & Authentication
-- [ ] Storage Layer Implementation
+#### Storage & Authentication
+- [ ] Production Storage Layer
   - [ ] Define storage interfaces
   - [ ] Implement PostgreSQL backend
   - [ ] Add Redis caching support
@@ -65,19 +147,17 @@
   - [ ] Support multiple auth providers
   - [ ] MFA integration
 
-### 4. CLI Framework (from Vision)
-- [ ] Basic CLI Structure
-  - [ ] Command-line parsing
+#### Extended CLI Framework
+- [ ] Advanced CLI Features
   - [ ] Configuration management
-  - [ ] Basic CRUD operations
-  - [ ] Output formatting
-- [ ] Interactive Terminal UI (TUI)
+  - [ ] Advanced CRUD operations
+  - [ ] Rich output formatting
+- [ ] Terminal UI (TUI)
   - [ ] Secret browser interface
   - [ ] Real-time updates
   - [ ] Keyboard shortcuts
-  - [ ] Rich secret visualization
 
-### 5. Sync & Recovery
+#### Sync & Recovery
 - [ ] Device Synchronization
   - [ ] Define sync protocol
   - [ ] Implement conflict resolution
