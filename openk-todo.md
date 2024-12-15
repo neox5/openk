@@ -48,32 +48,58 @@
   - [x] Add tests
 
 ### 2. Key Derivation Storage - Phase 1
-- [ ] Implement InMemoryMiniBackend for KeyDerivation
-  - [ ] StoreDerivationParams
-  - [ ] GetDerivationParams
-  - [ ] Basic transaction support
-  - [ ] Tests
+- [x] Implement InMemoryMiniBackend for KeyDerivation
+  - [x] StoreDerivationParams
+  - [x] GetDerivationParams
 
 ### 3. Server Support - Phase 1
+- [x] Basic HTTP server planning
+  - [x] Server package structure defined
+  - [x] RFC 7807 error handling design (ADR-010)
+  - [x] Updated CODE_STYLE.md
 - [ ] Basic HTTP server implementation
-  - [ ] KeyDerivation endpoints
-  - [ ] Health check
-  - [ ] Error handling
+  - [x] Core server setup
+    - [x] Basic server structure
+    - [x] Configuration
+    - [x] Health check endpoint
+    - [x] Response helpers
+  - [ ] Error handling package
+    - [ ] Implement RFC 7807 error types
+    - [ ] Error response middleware
+    - [ ] Error helper functions
+  - [ ] Key Derivation endpoints
+    - [ ] POST /api/v1/derivation/params
+    - [ ] GET /api/v1/derivation/params/{username}
   - [ ] Tests
+    - [ ] Server tests
+    - [ ] Handler tests
+    - [ ] Error handling tests
+- [ ] Server Usage Documentation
+  - [ ] Add example usages
+  - [ ] Document error responses
 
 ### 4. CLI Support - Phase 1
 - [ ] Basic CLI implementation
   - [ ] KeyDerivation commands
   - [ ] Server interaction
-  - [ ] Tests
 
 ### 5. Integration Testing - Phase 1
 - [ ] Test KeyDerivation/MasterKey flow
   - [ ] End-to-end tests
   - [ ] Error scenarios
-  - [ ] CLI interaction tests
 
-### 6. KMS Storage Implementation - Phase 2
+### 6. Authentication Implementation
+- [ ] Design authentication flow
+  - [ ] Define auth endpoints
+  - [ ] Implement AuthKey validation
+  - [ ] Session management
+  - [ ] Rate limiting
+  - [ ] Token management
+- [ ] Update existing endpoints for auth requirements
+- [ ] CLI authentication support
+- [ ] Integration tests for auth flow
+
+### 7. KMS Storage Implementation - Phase 2
 - [ ] Extend InMemoryMiniBackend for KMS
   - [ ] KeyPair operations
   - [ ] DEK operations
@@ -81,42 +107,42 @@
   - [ ] Transaction support
   - [ ] Comprehensive tests
 
-### 7. Server Support - Phase 2
+### 8. Server Support - Phase 2
 - [ ] Extend HTTP server
   - [ ] KMS endpoints
   - [ ] Error handling
   - [ ] Tests
 
-### 8. CLI Support - Phase 2
+### 9. CLI Support - Phase 2
 - [ ] Extend CLI
   - [ ] KMS commands
   - [ ] Key management operations
   - [ ] Tests
 
-### 9. Integration Testing - Phase 2
+### 10. Integration Testing - Phase 2
 - [ ] Test complete KMS flow
   - [ ] End-to-end tests
   - [ ] Error scenarios
   - [ ] CLI interaction tests
 
-### 10. Secret Storage Implementation - Phase 3
+### 11. Secret Storage Implementation - Phase 3
 - [ ] Extend InMemoryMiniBackend for MiniSecret
   - [ ] Secret operations
   - [ ] Transaction support
   - [ ] Tests
 
-### 11. Server Support - Phase 3
+### 12. Server Support - Phase 3
 - [ ] Extend HTTP server
   - [ ] Secret endpoints
   - [ ] Error handling
   - [ ] Tests
 
-### 12. CLI Support - Phase 3
+### 13. CLI Support - Phase 3
 - [ ] Extend CLI
   - [ ] Secret management commands
   - [ ] Tests
 
-### 13. Integration Testing - Phase 3
+### 14. Integration Testing - Phase 3
 - [ ] Test complete system
   - [ ] End-to-end tests
   - [ ] Performance tests

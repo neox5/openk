@@ -4,7 +4,7 @@
 Revised (supersedes previous version)
 
 ## Context
-The system needs a clear approach for deriving cryptographic keys from user credentials. Taking inspiration from proven systems like Bitwarden, we implement parallel key derivation for authentication and encryption operations while maintaining strong security properties.
+The system needs a clear approach for deriving cryptographic keys from user credentials. We implement parallel key derivation for authentication and encryption operations while maintaining strong security properties.
 
 ## Decision
 
