@@ -2,7 +2,6 @@ package kms_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,7 +16,6 @@ func TestKeyDerivation_New(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, "testuser", params.Username)
 			assert.Equal(t, kms.MinIterations, params.Iterations)
-			assert.WithinDuration(t, time.Now(), params.CreatedAt, time.Second)
 		})
 
 		t.Run("creates with higher iterations", func(t *testing.T) {

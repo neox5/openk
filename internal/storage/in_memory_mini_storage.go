@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/neox5/openk/internal/kms"
@@ -33,19 +34,19 @@ func NewInMemoryMiniStorage() *InMemoryMiniStorage {
 }
 
 // StoreDerivationParams stores key derivation parameters
-func (s *InMemoryMiniStorage) StoreDerivationParams(ctx context.Context, params *kms.InitialKeyDerivation) error {
+func (s *InMemoryMiniStorage) StoreDerivationParams(ctx context.Context, params *kms.InitialKeyDerivation) (*kms.KeyDerivation, error) {
 	// Input validation
 	if params == nil {
-		return ErrParamsNil
+		return nil, ErrParamsNil
 	}
 	if params.Username == "" {
-		return kms.ErrUsernameEmpty
+		return nil, kms.ErrUsernameEmpty
 	}
 
 	// Check context cancellation
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return nil, ctx.Err()
 	default:
 	}
 
@@ -61,11 +62,11 @@ func (s *InMemoryMiniStorage) StoreDerivationParams(ctx context.Context, params 
 		ID:         id.String(),
 		Username:   params.Username,
 		Iterations: params.Iterations,
-		CreatedAt:  params.CreatedAt,
+		CreatedAt:  time.Now(),
 	}
 	s.derivationParams[params.Username] = stored
 
-	return nil
+	return stored, nil
 }
 
 // GetDerivationParams retrieves key derivation parameters for a username

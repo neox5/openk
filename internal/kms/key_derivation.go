@@ -32,7 +32,6 @@ const (
 type InitialKeyDerivation struct {
 	Username   string
 	Iterations int
-	CreatedAt  time.Time
 }
 
 // KeyDerivation represents parameters as stored in the backend
@@ -56,7 +55,6 @@ func NewKeyDerivation(username string, iterations int) (*InitialKeyDerivation, e
 	return &InitialKeyDerivation{
 		Username:   username,
 		Iterations: iterations,
-		CreatedAt:  time.Now(),
 	}, nil
 }
 

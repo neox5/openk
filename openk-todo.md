@@ -59,12 +59,12 @@
 ## Next Up
 
 ### 1. Basic HTTP server implementation
-- [ ] Error Middleware
-  - [ ] Implement middleware using new error types
-  - [ ] Add HTTP error tests
-- [ ] Key Derivation endpoints
-  - [ ] POST /api/v1/derivation/params
-  - [ ] GET /api/v1/derivation/params/{username}
+- [x] Error Middleware
+  - [x] Implement middleware using new error types
+  - [x] Add HTTP error tests
+- [x] Key Derivation endpoints
+  - [x] POST /api/v1/derivation/params
+  - [x] GET /api/v1/derivation/params/{username}
 - [ ] Update server.go to use new error handling
 - [ ] Tests
   - [ ] Server tests

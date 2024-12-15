@@ -7,8 +7,7 @@ import (
 )
 
 type MiniStorageBackend interface {
-    // Key Derivation Parameters
-    StoreDerivationParams(ctx context.Context, params *kms.InitialKeyDerivation) error
-    GetDerivationParams(ctx context.Context, username string) (*kms.KeyDerivation, error)
+	// Key Derivation Parameters
+	StoreDerivationParams(ctx context.Context, params *kms.InitialKeyDerivation) (*kms.KeyDerivation, error)
+	GetDerivationParams(ctx context.Context, username string) (*kms.KeyDerivation, error)
 }
-
