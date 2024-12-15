@@ -65,11 +65,15 @@
 - [x] Key Derivation endpoints
   - [x] POST /api/v1/derivation/params
   - [x] GET /api/v1/derivation/params/{username}
-- [ ] Update server.go to use new error handling
+- [x] Update server implementation
+  - [x] Modern routing with Go 1.22 features
+  - [x] Consistent HandlerFunc usage
+  - [x] Clean middleware composition
 - [ ] Tests
   - [ ] Server tests
   - [ ] Handler tests
-  - [ ] Error handling tests 
+  - [ ] Error handling tests
+  - [ ] Middleware tests
 
 ### 2. CLI Support - Phase 1
 - [ ] Basic CLI implementation
