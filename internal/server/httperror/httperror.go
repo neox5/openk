@@ -1,24 +1,25 @@
-package server
+package httperror
 
 import (
 	"encoding/json"
 	"net/http"
 )
 
-type Status int
+type HTTPStatus int
 
 const (
-	StatusInvalidRequest Status = 400
-	StatusUnauthorized   Status = 401
-	StatusNotFound       Status = 404
-	StatusConflict       Status = 409
-	StatusInternal       Status = 500
+	StatusInvalidRequest HTTPStatus = http.StatusBadRequest
+	StatusUnauthorized   HTTPStatus = http.StatusUnauthorized
+	StatusNotFound       HTTPStatus = http.StatusNotFound
+	StatusConflict       HTTPStatus = http.StatusConflict
+	StatusInternal       HTTPStatus = http.StatusInternalServerError
 )
 
-type Error struct {
+// HTTPError implements RFC 7807 for HTTP API error responses
+type HTTPError struct {
 	Type     string      `json:"type"`
 	Title    string      `json:"title"`
-	Status   Status      `json:"status"`
+	Status   HTTPStatus  `json:"status"`
 	Detail   string      `json:"detail,omitempty"`
 	Instance string      `json:"instance,omitempty"`
 	Extra    interface{} `json:"extra,omitempty"`
@@ -33,8 +34,9 @@ const (
 	typeConflict   = typePrefix + "/conflict"
 )
 
-func ValidationError(field, reason string) *Error {
-	return &Error{
+// ValidationError creates an error response for request validation failures
+func ValidationError(field, reason string) *HTTPError {
+	return &HTTPError{
 		Type:   typeValidation,
 		Title:  "Validation Failed",
 		Status: StatusInvalidRequest,
@@ -47,8 +49,9 @@ func ValidationError(field, reason string) *Error {
 	}
 }
 
-func NotFoundError(resource, id string) *Error {
-	return &Error{
+// NotFoundError creates an error response when a requested resource doesn't exist
+func NotFoundError(resource, id string) *HTTPError {
+	return &HTTPError{
 		Type:   typeNotFound,
 		Title:  "Resource Not Found",
 		Status: StatusNotFound,
@@ -56,21 +59,23 @@ func NotFoundError(resource, id string) *Error {
 	}
 }
 
-func InternalError() *Error {
-	return &Error{
+// InternalError creates an error response for unexpected server-side errors
+func InternalError() *HTTPError {
+	return &HTTPError{
 		Type:   typeInternal,
 		Title:  "Internal Error",
 		Status: StatusInternal,
 	}
 }
 
-// Write sends an error as an RFC 7807 response
+// WriteError writes any error as an RFC 7807 response, converting non-HTTPErrors to internal errors
 func WriteError(w http.ResponseWriter, r *http.Request, err error) {
-	var problemDetails *Error
-	if e, ok := err.(*Error); ok {
+	var problemDetails *HTTPError
+	if e, ok := err.(*HTTPError); ok {
 		problemDetails = e
 	} else {
-		problemDetails = InternalError().WithDetail(err.Error())
+		// Never expose internal error details to clients
+		problemDetails = InternalError()
 	}
 
 	if problemDetails.Instance == "" {
@@ -82,23 +87,27 @@ func WriteError(w http.ResponseWriter, r *http.Request, err error) {
 	json.NewEncoder(w).Encode(problemDetails)
 }
 
-func (e *Error) WithInstance(uri string) *Error {
+// WithInstance adds the request URI to the error response
+func (e *HTTPError) WithInstance(uri string) *HTTPError {
 	e.Instance = uri
 	return e
 }
 
-func (e *Error) WithDetail(detail string) *Error {
+// WithDetail adds a detailed error message to the response
+func (e *HTTPError) WithDetail(detail string) *HTTPError {
 	e.Detail = detail
 	return e
 }
 
-func (e *Error) Error() string {
+// Error implements the error interface for HTTPError
+func (e *HTTPError) Error() string {
 	if e.Detail != "" {
 		return e.Detail
 	}
 	return e.Title
 }
 
+// WriteJSON writes a JSON response with the given status code and data
 func WriteJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

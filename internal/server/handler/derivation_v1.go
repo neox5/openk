@@ -1,4 +1,4 @@
-package server
+package handler
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/neox5/openk/internal/kms"
+	"github.com/neox5/openk/internal/server/httperror"
 	"github.com/neox5/openk/internal/storage"
 )
 
@@ -23,28 +24,28 @@ type paramsResponse struct {
 }
 
 // Handler
-type derivationV1Handler struct {
+type DerivationV1Handler struct {
 	storage storage.MiniStorageBackend
 }
 
-func newDerivationV1Handler(storage storage.MiniStorageBackend) *derivationV1Handler {
+func NewDerivationV1Handler(storage storage.MiniStorageBackend) *DerivationV1Handler {
 	if storage == nil {
 		panic("storage cannot be nil")
 	}
-	return &derivationV1Handler{storage: storage}
+	return &DerivationV1Handler{storage: storage}
 }
 
-func (h *derivationV1Handler) storeParams(w http.ResponseWriter, r *http.Request) {
+func (h *DerivationV1Handler) StoreParams(w http.ResponseWriter, r *http.Request) {
 	// Parse request body
 	var req storeParamsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		WriteError(w, r, ValidationError("body", "invalid JSON"))
+		httperror.WriteError(w, r, httperror.ValidationError("body", "invalid JSON"))
 		return
 	}
 
 	// Validate request
 	if err := validateDerivationRequest(&req); err != nil {
-		WriteError(w, r, err)
+		httperror.WriteError(w, r, err)
 		return
 	}
 
@@ -53,13 +54,13 @@ func (h *derivationV1Handler) storeParams(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		switch err {
 		case kms.ErrUsernameEmpty, kms.ErrUsernameLength, kms.ErrUsernameInvalid:
-			WriteError(w, r, ValidationError("username", err.Error()))
+			httperror.WriteError(w, r, httperror.ValidationError("username", err.Error()))
 			return
 		case kms.ErrIterationsInvalid:
-			WriteError(w, r, ValidationError("iterations", err.Error()))
+			httperror.WriteError(w, r, httperror.ValidationError("iterations", err.Error()))
 			return
 		default:
-			WriteError(w, r, InternalError().WithDetail(err.Error()))
+			httperror.WriteError(w, r, httperror.InternalError())
 			return
 		}
 	}
@@ -69,13 +70,13 @@ func (h *derivationV1Handler) storeParams(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		switch err {
 		case storage.ErrParamsNil:
-			WriteError(w, r, ValidationError("params", "cannot be nil"))
+			httperror.WriteError(w, r, httperror.ValidationError("params", "cannot be nil"))
 			return
 		case storage.ErrParamsNotFound:
-			WriteError(w, r, NotFoundError("derivation parameters", params.Username))
+			httperror.WriteError(w, r, httperror.NotFoundError("derivation parameters", params.Username))
 			return
 		default:
-			WriteError(w, r, InternalError().WithDetail(err.Error()))
+			httperror.WriteError(w, r, httperror.InternalError())
 			return
 		}
 	}
@@ -88,14 +89,14 @@ func (h *derivationV1Handler) storeParams(w http.ResponseWriter, r *http.Request
 		CreatedAt:  stored.CreatedAt,
 	}
 
-	WriteJSON(w, http.StatusCreated, resp)
+	httperror.WriteJSON(w, http.StatusCreated, resp)
 }
 
-func (h *derivationV1Handler) getParams(w http.ResponseWriter, r *http.Request) {
-	// Get username from path parameter using Go 1.22's PathValue
+func (h *DerivationV1Handler) GetParams(w http.ResponseWriter, r *http.Request) {
+	// Get username from path parameter
 	username := r.PathValue("username")
 	if username == "" {
-		WriteError(w, r, ValidationError("username", "cannot be empty"))
+		httperror.WriteError(w, r, httperror.ValidationError("username", "cannot be empty"))
 		return
 	}
 
@@ -104,13 +105,13 @@ func (h *derivationV1Handler) getParams(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		switch err {
 		case kms.ErrUsernameEmpty:
-			WriteError(w, r, ValidationError("username", "cannot be empty"))
+			httperror.WriteError(w, r, httperror.ValidationError("username", "cannot be empty"))
 			return
 		case storage.ErrParamsNotFound:
-			WriteError(w, r, NotFoundError("derivation parameters", username))
+			httperror.WriteError(w, r, httperror.NotFoundError("derivation parameters", username))
 			return
 		default:
-			WriteError(w, r, InternalError().WithDetail(err.Error()))
+			httperror.WriteError(w, r, httperror.InternalError())
 			return
 		}
 	}
@@ -123,18 +124,18 @@ func (h *derivationV1Handler) getParams(w http.ResponseWriter, r *http.Request) 
 		CreatedAt:  params.CreatedAt,
 	}
 
-	WriteJSON(w, http.StatusOK, resp)
+	httperror.WriteJSON(w, http.StatusOK, resp)
 }
 
 func validateDerivationRequest(req *storeParamsRequest) error {
 	if req.Username == "" {
-		return ValidationError("username", "cannot be empty")
+		return httperror.ValidationError("username", "cannot be empty")
 	}
 	if len(req.Username) > kms.MaxUsernameLen {
-		return ValidationError("username", "exceeds maximum length")
+		return httperror.ValidationError("username", "exceeds maximum length")
 	}
 	if req.Iterations < kms.MinIterations {
-		return ValidationError("iterations", "below minimum value")
+		return httperror.ValidationError("iterations", "below minimum value")
 	}
 	return nil
 }

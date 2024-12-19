@@ -7,8 +7,8 @@ const (
 	DefaultMaxBodySize = 1 << 20
 )
 
-// MaxBodySize limits the size of request bodies
-func MaxBodySize(maxBytes int64) func(http.HandlerFunc) http.HandlerFunc {
+// BodyLimit limits the size of request bodies
+func BodyLimit(maxBytes int64) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			// Only apply to requests that might have bodies

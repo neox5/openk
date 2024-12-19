@@ -53,15 +53,23 @@
 │   │   ├── key_pair_test.go
 │   │   ├── master_key.go
 │   │   └── master_key_test.go
+│   ├── opene
+│   │   ├── base.go
+│   │   ├── predefined.go
+│   │   └── problem.go
 │   ├── secret
+│   │   ├── field.go
 │   │   ├── mini_secret.go
+│   │   └── secret.go
 │   ├── server
+│   │   ├── handler
+│   │   │   └── derivation_v1.go
+│   │   ├── httperror
+│   │   │   └── httperror.go
 │   │   ├── middleware
-│   │   │   ├── error_middleware.go
-│   │   │   └── error_middleware_test.go
-│   │   ├── derivation_v1.go
-│   │   ├── error.go
-│   │   ├── response.go
+│   │   │   └── body_limit_middleware.go
+│   │   ├── response
+│   │   │   └── writer.go
 │   │   ├── routes.go
 │   │   └── server.go
 │   └── storage
@@ -76,4 +84,4 @@
 ├── README.md
 └── repo_dir.txt
 
-13 directories, 64 files
+17 directories, 68 files

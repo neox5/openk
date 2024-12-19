@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 	"time"
 
-	"github.com/neox5/openk/internal/server/middleware"
+	"github.com/neox5/openk/internal/server/httperror"
 	"github.com/neox5/openk/internal/storage"
 )
 
@@ -63,10 +64,10 @@ func New(config Config, storage storage.MiniStorageBackend) (*Server, error) {
 		mux:     http.NewServeMux(),
 	}
 
-	// Initialize HTTP server
+	// Initialize HTTP server with panic recovery
 	s.server = &http.Server{
 		Addr:           config.Addr,
-		Handler:        s.mux,
+		Handler:        s.recoveryHandler(s.mux),
 		ReadTimeout:    config.ReadTimeout,
 		WriteTimeout:   config.WriteTimeout,
 		IdleTimeout:    config.IdleTimeout,
@@ -77,6 +78,22 @@ func New(config Config, storage storage.MiniStorageBackend) (*Server, error) {
 	s.registerRoutes()
 
 	return s, nil
+}
+
+// recoveryHandler wraps an http.Handler with panic recovery
+func (s *Server) recoveryHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				// Log the stack trace
+				debug.Stack()
+
+				// Return 500 to the client
+				httperror.WriteError(w, r, httperror.InternalError())
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
 }
 
 // Start begins listening for requests
@@ -102,6 +119,6 @@ func (s *Server) handleHealth() http.HandlerFunc {
 			Version: "0.1.0", // TODO: Get from version package
 		}
 
-		WriteJSON(w, http.StatusOK, resp)
+		httperror.WriteJSON(w, http.StatusOK, resp)
 	}
 }

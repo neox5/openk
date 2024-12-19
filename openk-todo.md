@@ -50,40 +50,78 @@
   - [x] Server package structure defined
   - [x] RFC 7807 error handling design (ADR-010)
   - [x] Updated CODE_STYLE.md
-- [x] Error handling package
-  - [x] Protocol-agnostic API error types
-  - [x] API error tests
-  - [x] HTTP error mapping
-  - [x] Clean separation of concerns
+- [x] Centralized Error Package
+  - [x] Core error types (errortypes.go)
+  - [x] HTTP error handling (httperror.go)
+  - [x] Error mapping (mapping.go)
+- [x] OpenE Error Package Implementation
+  - [x] Problem interface for RFC 7807
+  - [x] BaseError implementation
+  - [x] Predefined common errors
 
 ## Next Up
 
-### 1. Basic HTTP server implementation
-- [x] Error Middleware
-  - [x] Implement middleware using new error types
-  - [x] Add HTTP error tests
-- [x] Key Derivation endpoints
-  - [x] POST /api/v1/derivation/params
-  - [x] GET /api/v1/derivation/params/{username}
-- [x] Update server implementation
-  - [x] Modern routing with Go 1.22 features
-  - [x] Consistent HandlerFunc usage
-  - [x] Clean middleware composition
+### 1. Error System Completion
+- [ ] Error System Migration
+  - [ ] KMS Package Updates
+    - [ ] Remove errors.go
+    - [ ] Update key_derivation.go to use central errors
+    - [ ] Update master_key.go error handling
+    - [ ] Update key_pair.go error handling
+    - [ ] Update dek.go error handling
+    - [ ] Update all KMS tests
+  - [ ] Storage Package Updates
+    - [ ] Update in_memory_mini_storage.go to use central errors
+    - [ ] Update storage tests
+    - [ ] Remove local error declarations
+  - [ ] Crypto Package Review
+    - [ ] Audit aes_gcm.go error handling
+    - [ ] Audit ciphertext.go error handling
+    - [ ] Audit rsa.go error handling
+    - [ ] Update error handling where appropriate
+    - [ ] Update crypto tests
+  - [ ] Server Package Updates
+    - [ ] Remove httperror package
+    - [ ] Update derivation_v1.go to use new error system
+    - [ ] Update routes.go error handling
+    - [ ] Update all server tests
+  - [ ] Documentation
+    - [ ] Update ADR-010 with new approach
+    - [ ] Update CODE_STYLE.md error section
+    - [ ] Update example code in docs
+
+### 2. Error Handling Guidelines & Integration
+- [ ] Error Propagation Guidelines
+  - [ ] Best practices for error wrapping
+  - [ ] When to create vs wrap errors
+  - [ ] Maintaining error chain context
+- [ ] Logging Integration
+  - [ ] Define approach (errors → logging vs logging → errors)
+  - [ ] Integration patterns
+  - [ ] Sensitive data handling in logs
+- [ ] Integration Points
+  - [ ] Middleware error handling patterns
+  - [ ] Transaction error handling
+  - [ ] Async/background job error handling
+- [ ] Documentation
+  - [ ] Usage guidelines
+  - [ ] Error handling best practices
+  - [ ] Example implementations
+
+### 3. Basic HTTP server implementation
+- [ ] Error Middleware with new error system
+- [ ] Key Derivation endpoints with updated error handling
+  - [ ] POST /api/v1/derivation/params
+  - [ ] GET /api/v1/derivation/params/{username}
+- [ ] Update server implementation
+  - [ ] Modern routing with Go 1.22 features
+  - [ ] Consistent HandlerFunc usage
+  - [ ] Clean middleware composition
 - [ ] Tests
-  - [ ] Server tests
-  - [ ] Handler tests
-  - [ ] Error handling tests
+  - [ ] Server tests with new error system
+  - [ ] Handler tests with central errors
+  - [ ] Response writer tests
   - [ ] Middleware tests
-
-### 2. CLI Support - Phase 1
-- [ ] Basic CLI implementation
-  - [ ] KeyDerivation commands
-  - [ ] Server interaction
-
-### 3. Integration Testing - Phase 1
-- [ ] Test KeyDerivation/MasterKey flow
-  - [ ] End-to-end tests
-  - [ ] Error scenarios
 
 ### 4. Authentication Implementation
 - [ ] Design authentication flow
