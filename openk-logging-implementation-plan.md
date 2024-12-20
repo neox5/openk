@@ -1,181 +1,131 @@
-# OpenK Logging Implementation Plan
+# OpenK Logging Implementation Plan - Complete
 
 ## Core Architecture Decision
 
-We will use `slog` as our logging abstraction layer, following its design principles:
-- Use `slog` interfaces throughout our codebase
-- Implement handlers for specific backends (zerolog)
-- Keep the logging abstraction clean and framework-agnostic
+We will use `slog` as our logging abstraction layer, with optional structured logging via zerolog:
+- All internal packages use only `slog` interface
+- Applications can choose to use zerolog's handler for structured/JSON output
+- Keep logging configuration clean and simple
 
-## Implementation Phases
+## Implementation Status
 
-### Phase 1: Core Setup (Week 1)
+### Phase 0: Core Setup ✓
 
-#### A. Base Configuration
-- [ ] Define default `slog` logger configuration
-- [ ] Implement environment-based level configuration
-- [ ] Create logging initialization package
-- [ ] Add basic test coverage
-
+#### A. Base Logging Package ✓
 ```go
-// Basic configuration setup
-type LogConfig struct {
-    Level      slog.Level
-    AddSource  bool
-    TimeFormat string
-    JSONOutput bool
-}
-
-func InitLogger(config LogConfig) *slog.Logger {
-    var handler slog.Handler
-    
-    // Default to text handler for development
-    if !config.JSONOutput {
-        handler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-            Level:     config.Level,
-            AddSource: config.AddSource,
-        })
-    } else {
-        handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-            Level:     config.Level,
-            AddSource: config.AddSource,
-        })
-    }
-    
-    return slog.New(handler)
-}
+internal/logging/
+├── config.go      # Logging configuration - DONE
+└── logging.go     # slog initialization - DONE
 ```
 
-### Phase 2: Zerolog Integration (Week 1)
+Completed:
+- [x] Create minimal Config struct for slog
+- [x] Implement DefaultConfig()
+- [x] Create InitLogger() using slog's handlers
 
-#### A. Zerolog Handler Implementation
-- [ ] Create zerolog handler implementing `slog.Handler`
-- [ ] Add configuration options
-- [ ] Implement level mapping
-- [ ] Add performance tests
-
+#### B. Example Implementation ✓
 ```go
-// Zerolog handler implementation
-type ZerologHandler struct {
-    logger  zerolog.Logger
-    attrs   []slog.Attr
-    groups  []string
-}
-
-func NewZerologHandler(logger zerolog.Logger) slog.Handler {
-    return &ZerologHandler{
-        logger: logger,
-    }
-}
-
-func (h *ZerologHandler) Handle(ctx context.Context, r slog.Record) error {
-    // Implement slog.Handler interface
-}
+internal/logging/examples/
+└── main.go        # Usage examples - DONE
 ```
 
-### Phase 3: OpenTelemetry Integration (Week 2)
+Completed:
+- [x] Show default slog usage
+- [x] Demo development setup (console output)
+- [x] Demo production setup (JSON output)
+- [x] Document output formats
 
-#### A. Context Handling
-- [ ] Add trace/span extraction from context
-- [ ] Implement automatic trace ID logging
-- [ ] Create middleware for HTTP servers
+## Phase 1: Enhanced Logging Foundation
 
-```go
-func WithTraceContext(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        ctx := r.Context()
-        
-        if span := trace.SpanFromContext(ctx); span != nil {
-            spanCtx := span.SpanContext()
-            slog.InfoContext(ctx, "request started",
-                "trace_id", spanCtx.TraceID().String(),
-                "span_id", spanCtx.SpanID().String(),
-            )
-        }
-        
-        next.ServeHTTP(w, r)
-    })
-}
-```
+### Stage 1A: Context Enhancement
+Priority: High
+Estimated Time: 1 day
 
-### Phase 4: Error Integration (Week 2)
+Tasks:
+- [ ] Design context keys for logging metadata
+- [ ] Implement request ID handling in context
+- [ ] Add trace context support
+- [ ] Create helper functions for context extraction
+- [ ] Write tests for context utilities
 
-#### A. OpenE Integration
-- [ ] Implement error field extraction
-- [ ] Add sensitive data handling
-- [ ] Create error logging helpers
+### Stage 1B: Basic Sanitization
+Priority: High
+Estimated Time: 1 day
 
-```go
-// Error logging helper
-func LogError(ctx context.Context, err error) {
-    var openErr *opene.Error
-    if errors.As(err, &openErr) {
-        // Log using structured fields from OpenE
-        slog.ErrorContext(ctx, openErr.Message,
-            "error_code", openErr.Code,
-            "domain", openErr.Domain,
-            "operation", openErr.Operation,
-        )
-    } else {
-        slog.ErrorContext(ctx, err.Error())
-    }
-}
-```
+Tasks:
+- [ ] Define sanitizer interface
+- [ ] Implement basic PII sanitizer
+- [ ] Add secret value redaction
+- [ ] Create sanitizer registry
+- [ ] Write tests for sanitizers
 
-## Testing Strategy
+### Stage 1C: Configuration Updates
+Priority: Medium
+Estimated Time: 0.5 day
 
-### 1. Handler Tests
-- [ ] Test zerolog handler implementation
-- [ ] Verify level mapping
-- [ ] Test context propagation
-- [ ] Performance benchmarks
+Tasks:
+- [ ] Add sanitization options to config
+- [ ] Add context handling options
+- [ ] Update documentation
+- [ ] Write tests for new config options
 
-### 2. Integration Tests
-- [ ] Test OpenTelemetry context extraction
-- [ ] Verify error logging
-- [ ] Test configuration loading
-- [ ] End-to-end logging tests
+## Phase 2: Middleware Integration
 
-## Documentation
+### Stage 2A: Basic Request Logging
+Priority: High
+Estimated Time: 1 day
 
-### 1. Usage Guidelines
-- [ ] Basic logging patterns
-- [ ] Context usage
-- [ ] Error logging
-- [ ] Configuration options
+Tasks:
+- [ ] Implement basic request logging middleware
+- [ ] Add timing information
+- [ ] Add status code logging
+- [ ] Write tests for request logging
 
-### 2. Handler Documentation
-- [ ] Zerolog handler setup
-- [ ] Performance considerations
-- [ ] Best practices
+### Stage 2B: Correlation Support
+Priority: Medium
+Estimated Time: 1 day
 
-## Future Considerations
+Tasks:
+- [ ] Add request ID middleware
+- [ ] Implement header extraction
+- [ ] Add trace context propagation
+- [ ] Write correlation tests
 
-1. **Additional Handlers**
-   - Consider zap implementation
-   - Cloud logging integrations
-   - Custom formatting needs
+### Stage 2C: Error Integration
+Priority: Medium
+Estimated Time: 0.5 day
 
-2. **Advanced Features**
-   - Structured logging patterns
-   - Log aggregation
-   - Performance optimization
+Tasks:
+- [ ] Integrate with OpenE error system
+- [ ] Add error logging middleware
+- [ ] Implement error sanitization
+- [ ] Write error handling tests
 
-3. **Monitoring Integration**
-   - Metrics extraction
-   - Health checks
-   - Dashboard integration
+## Implementation Notes
 
-## Success Criteria
+### Stage Selection Criteria
+- Each stage should be completable in 1 day or less
+- Stages can be implemented independently when possible
+- Each stage should include its own tests
+- Documentation should be updated with each stage
 
-1. All code uses `slog` interface for logging
-2. Zero direct dependencies on specific logging frameworks in packages
-3. Comparable performance to direct zerolog usage
-4. Clean integration with OpenTelemetry
-5. Comprehensive test coverage
+### Testing Strategy
+- Unit tests for all new functionality
+- Integration tests for middleware
+- Performance benchmarks for critical paths
+- Security tests for sanitization
 
-## Next Steps
+### Security Considerations
+- Never log raw secrets or credentials
+- Sanitize PII consistently
+- Maintain audit trail requirements
+- Consider log level security implications
 
-1. Begin with Phase 1: Core Setup
-2. Create proof-of-concept for zerolog handler
-3. Review and adjust implementation plan based on findings
+### Suggested First Implementation
+1. Stage 1A: Context Enhancement
+2. Stage 2A: Basic Request Logging
+
+This provides the foundation for:
+- Request tracking
+- Basic operational visibility
+- Further logging enhancements
