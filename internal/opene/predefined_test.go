@@ -14,9 +14,8 @@ func TestNewValidationError(t *testing.T) {
 	require.NotNil(t, err)
 
 	assert.Equal(t, "invalid input", err.Message)
-	assert.Equal(t, opene.CodeValidationError, err.Code)
+	assert.Equal(t, opene.CodeValidation, err.Code)
 	assert.Equal(t, http.StatusBadRequest, err.StatusCode)
-	assert.Empty(t, err.Domain)
 	assert.NotNil(t, err.Meta)
 	assert.False(t, err.IsSensitive)
 }
@@ -28,7 +27,6 @@ func TestNewNotFoundError(t *testing.T) {
 	assert.Equal(t, "resource not found", err.Message)
 	assert.Equal(t, opene.CodeNotFound, err.Code)
 	assert.Equal(t, http.StatusNotFound, err.StatusCode)
-	assert.Empty(t, err.Domain)
 	assert.NotNil(t, err.Meta)
 	assert.False(t, err.IsSensitive)
 }
@@ -40,7 +38,6 @@ func TestNewConflictError(t *testing.T) {
 	assert.Equal(t, "resource exists", err.Message)
 	assert.Equal(t, opene.CodeConflict, err.Code)
 	assert.Equal(t, http.StatusConflict, err.StatusCode)
-	assert.Empty(t, err.Domain)
 	assert.NotNil(t, err.Meta)
 	assert.False(t, err.IsSensitive)
 }
@@ -50,9 +47,8 @@ func TestNewInternalError(t *testing.T) {
 	require.NotNil(t, err)
 
 	assert.Equal(t, "internal error", err.Message)
-	assert.Equal(t, opene.CodeInternalError, err.Code)
+	assert.Equal(t, opene.CodeInternal, err.Code)
 	assert.Equal(t, http.StatusInternalServerError, err.StatusCode)
-	assert.Empty(t, err.Domain)
 	assert.NotNil(t, err.Meta)
 	assert.True(t, err.IsSensitive)
 }

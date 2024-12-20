@@ -5,7 +5,7 @@ import "net/http"
 func NewValidationError(msg string) *Error {
 	return &Error{
 		Message:    msg,
-		Code:       CodeValidationError,
+		Code:       CodeValidation,
 		StatusCode: http.StatusBadRequest,
 		Meta:       make(Metadata),
 	}
@@ -32,7 +32,7 @@ func NewConflictError(msg string) *Error {
 func NewInternalError(msg string) *Error {
 	return &Error{
 		Message:     msg,
-		Code:        CodeInternalError,
+		Code:        CodeInternal,
 		StatusCode:  http.StatusInternalServerError,
 		IsSensitive: true,
 		Meta:        make(Metadata),

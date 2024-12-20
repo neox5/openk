@@ -10,25 +10,16 @@
 - Error code system
 - Basic error handling patterns
 
-## 1. Test Helpers
+## 1. Package Examples
 
-### 1.1 Error Testing Utilities
-- [ ] Create `testhelpers` package
-  - Helper functions for creating test errors
-  - Chain comparison utilities
-  - Metadata comparison
-  - Sensitivity checkers
-
-## 2. Package Examples
-
-### 2.1 Error Creation Examples
+### 1.1 Error Creation Examples
 - [ ] Basic error creation examples
   - Simple error creation
   - Error wrapping patterns
   - Metadata handling
   - Chain creation
 
-### 2.2 Common Usage Patterns
+### 1.2 Common Usage Patterns
 - [ ] Error conversion
   - Converting standard errors
   - HTTP error conversion

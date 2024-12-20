@@ -10,152 +10,110 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAsProblem(t *testing.T) {
-	t.Run("success cases", func(t *testing.T) {
-		t.Run("converts basic error to problem", func(t *testing.T) {
-			err := &opene.Error{
-				Message:    "validation failed",
-				Code:       "VALIDATION_ERROR",
-				Domain:     "validation",
-				StatusCode: http.StatusBadRequest,
-			}
+func TestSetErrorBaseURI(t *testing.T) {
+	// Save original for cleanup
+	defer opene.ResetErrorBaseURI()
 
-			problem := opene.AsProblem(err)
-			require.NotNil(t, problem)
+	t.Run("accepts valid URI", func(t *testing.T) {
+		err := opene.SetErrorBaseURI("https://api.example.com/errors")
+		assert.Nil(t, err)
 
-			assert.Equal(t, "https://example.com/errors/validation", problem.Type)
-			assert.Equal(t, "validation failed", problem.Title)
-			assert.Equal(t, http.StatusBadRequest, problem.Status)
-			assert.Equal(t, "validation failed", problem.Detail)
-			assert.Empty(t, problem.Instance)
-			assert.Nil(t, problem.Extra)
-		})
+		// Verify through a problem conversion
+		prob := opene.AsProblem(opene.NewValidationError("test"))
+		assert.Equal(t, "https://api.example.com/errors/validation", prob.Type)
+	})
 
-		t.Run("includes metadata in extra field", func(t *testing.T) {
-			err := &opene.Error{
-				Message:    "invalid input",
-				Code:       "VALIDATION_ERROR",
-				Domain:     "validation",
-				StatusCode: http.StatusBadRequest,
-				Meta: opene.Metadata{
-					"field": "email",
-					"value": "invalid@example",
-				},
-			}
+	t.Run("accepts http protocol", func(t *testing.T) {
+		err := opene.SetErrorBaseURI("http://api.example.com/errors")
+		assert.Nil(t, err)
+	})
 
-			problem := opene.AsProblem(err)
-			require.NotNil(t, problem)
+	t.Run("removes trailing slash", func(t *testing.T) {
+		err := opene.SetErrorBaseURI("https://api.example.com/errors/")
+		assert.Nil(t, err)
 
-			extra, ok := problem.Extra.(opene.Metadata)
-			require.True(t, ok)
-			assert.Equal(t, "email", extra["field"])
-			assert.Equal(t, "invalid@example", extra["value"])
-		})
+		prob := opene.AsProblem(opene.NewValidationError("test"))
+		assert.Equal(t, "https://api.example.com/errors/validation", prob.Type)
+	})
 
-		t.Run("handles sensitive error", func(t *testing.T) {
-			err := &opene.Error{
-				Message:     "database connection failed: invalid credentials",
-				Code:        "INTERNAL_ERROR",
-				Domain:      "database",
-				StatusCode:  http.StatusServiceUnavailable,
-				IsSensitive: true,
-				Meta: opene.Metadata{
-					"database": "users",
-					"credentials": map[string]string{
-						"user": "admin",
-						"host": "db.internal",
-					},
-				},
-			}
+	t.Run("rejects empty URI", func(t *testing.T) {
+		err := opene.SetErrorBaseURI("")
+		require.NotNil(t, err)
+		assert.Equal(t, opene.CodeValidation, err.Code)
+		assert.Equal(t, "opene", err.Domain)
+		assert.Equal(t, "set_base_uri", err.Operation)
+		assert.Equal(t, "", err.Meta["provided_uri"])
+	})
 
-			problem := opene.AsProblem(err)
-			require.NotNil(t, problem)
-
-			// Verify sensitive information is hidden
-			assert.Equal(t, "https://example.com/errors/internal", problem.Type)
-			assert.Equal(t, "Internal Server Error", problem.Title)
-			assert.Equal(t, http.StatusInternalServerError, problem.Status)
-			assert.Empty(t, problem.Detail)
-			assert.Empty(t, problem.Instance)
-			assert.Nil(t, problem.Extra)
-		})
-
-		t.Run("handles standard error", func(t *testing.T) {
-			err := errors.New("standard error")
-			problem := opene.AsProblem(err)
-			require.NotNil(t, problem)
-
-			assert.Equal(t, "https://example.com/errors/internal", problem.Type)
-			assert.Equal(t, "Internal Server Error", problem.Title)
-			assert.Equal(t, http.StatusInternalServerError, problem.Status)
-			assert.Empty(t, problem.Detail)
-			assert.Empty(t, problem.Instance)
-			assert.Nil(t, problem.Extra)
-		})
-
-		t.Run("uses configured error base uri", func(t *testing.T) {
-			// Set custom base URI
-			opene.SetErrorBaseURI("https://api.myapp.com/errors/")
-
-			err := &opene.Error{
-				Message: "test error",
-				Domain:  "test",
-			}
-
-			problem := opene.AsProblem(err)
-			assert.Equal(t, "https://api.myapp.com/errors/test", problem.Type)
-
-			// Reset to default
-			opene.SetErrorBaseURI("https://example.com/errors/")
-		})
-
-		t.Run("handles empty domain", func(t *testing.T) {
-			err := &opene.Error{
-				Message: "test error",
-				// No domain specified
-			}
-
-			problem := opene.AsProblem(err)
-			assert.Equal(t, "https://example.com/errors/", problem.Type)
-		})
+	t.Run("rejects URI without protocol", func(t *testing.T) {
+		uri := "api.example.com/errors"
+		err := opene.SetErrorBaseURI(uri)
+		require.NotNil(t, err)
+		assert.Equal(t, opene.CodeValidation, err.Code)
+		assert.Equal(t, "opene", err.Domain)
+		assert.Equal(t, "set_base_uri", err.Operation)
+		assert.Equal(t, uri, err.Meta["provided_uri"])
 	})
 }
 
-func TestSetErrorBaseURI(t *testing.T) {
-	t.Run("success cases", func(t *testing.T) {
-		t.Run("updates problem type uri", func(t *testing.T) {
-			// Save original
-			original := "https://example.com/errors/"
+func TestAsProblem(t *testing.T) {
+	t.Run("converts basic error to problem", func(t *testing.T) {
+		err := &opene.Error{
+			Message:    "validation failed",
+			Code:       opene.CodeValidation,
+			Domain:     "test",
+			Operation:  "validate",
+			StatusCode: http.StatusBadRequest,
+			Meta: opene.Metadata{
+				"field": "username",
+			},
+		}
 
-			// Set new URI
-			opene.SetErrorBaseURI("https://errors.myapp.com/types/")
+		prob := opene.AsProblem(err)
+		require.NotNil(t, prob)
 
-			err := &opene.Error{
-				Message: "test error",
-				Domain:  "test",
-			}
+		assert.Equal(t, "https://openk.dev/errors/validation", prob.Type)
+		assert.Equal(t, "validation failed", prob.Title)
+		assert.Equal(t, http.StatusBadRequest, prob.Status)
+		assert.Equal(t, "validation failed", prob.Detail)
 
-			problem := opene.AsProblem(err)
-			assert.Equal(t, "https://errors.myapp.com/types/test", problem.Type)
+		meta, ok := prob.Extra.(opene.Metadata)
+		require.True(t, ok)
+		assert.Equal(t, "username", meta["field"])
+	})
 
-			// Reset to original
-			opene.SetErrorBaseURI(original)
-		})
+	t.Run("handles sensitive error", func(t *testing.T) {
+		err := &opene.Error{
+			Message:     "database error",
+			Code:        opene.CodeInternal,
+			Domain:      "db",
+			Operation:   "query",
+			StatusCode:  http.StatusInternalServerError,
+			IsSensitive: true,
+			Meta: opene.Metadata{
+				"query": "SELECT * FROM users",
+			},
+		}
 
-		t.Run("handles uri without trailing slash", func(t *testing.T) {
-			original := "https://example.com/errors/"
+		prob := opene.AsProblem(err)
+		require.NotNil(t, prob)
 
-			opene.SetErrorBaseURI("https://api.myapp.com/errors")
+		assert.Equal(t, "https://openk.dev/errors/internal", prob.Type)
+		assert.Equal(t, "Internal Server Error", prob.Title)
+		assert.Equal(t, http.StatusInternalServerError, prob.Status)
+		assert.Empty(t, prob.Detail)
+		assert.Nil(t, prob.Extra)
+	})
 
-			err := &opene.Error{
-				Message: "test error",
-				Domain:  "test",
-			}
+	t.Run("handles standard error", func(t *testing.T) {
+		err := errors.New("standard error")
+		prob := opene.AsProblem(err)
+		require.NotNil(t, prob)
 
-			problem := opene.AsProblem(err)
-			assert.Equal(t, "https://api.myapp.com/errors/test", problem.Type)
-
-			opene.SetErrorBaseURI(original)
-		})
+		assert.Equal(t, "https://openk.dev/errors/internal", prob.Type)
+		assert.Equal(t, "Internal Server Error", prob.Title)
+		assert.Equal(t, http.StatusInternalServerError, prob.Status)
+		assert.Empty(t, prob.Detail)
+		assert.Nil(t, prob.Extra)
 	})
 }

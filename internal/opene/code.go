@@ -4,8 +4,9 @@ package opene
 type ErrorCode string
 
 const (
-	CodeValidationError ErrorCode = "VALIDATION_ERROR"
-	CodeNotFound        ErrorCode = "NOT_FOUND"
-	CodeConflict        ErrorCode = "CONFLICT"
-	CodeInternalError   ErrorCode = "INTERNAL_ERROR"
+	// Basic error types that map directly to URLs
+	CodeValidation ErrorCode = "validation"
+	CodeNotFound   ErrorCode = "not_found"
+	CodeConflict   ErrorCode = "conflict"
+	CodeInternal   ErrorCode = "internal"
 )

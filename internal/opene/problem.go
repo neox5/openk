@@ -5,58 +5,69 @@ import (
 	"strings"
 )
 
-var errorBaseURI = "https://example.com/errors/"
+const defaultBaseURI = "https://openk.dev/errors"
 
-// SetErrorBaseURI configures the base URI for error types.
-// Must be called before creating any errors.
-func SetErrorBaseURI(uri string) {
-	// Ensure trailing slash
-	if !strings.HasSuffix(uri, "/") {
-		uri += "/"
-	}
-	errorBaseURI = uri
-}
+var errorBaseURI = defaultBaseURI
 
 // Problem implements RFC 7807 for HTTP API errors
 type Problem struct {
-	Type     string      `json:"type"`               // URI reference
-	Title    string      `json:"title"`              // Short, human-readable title
+	Type     string      `json:"type"`               // URI reference that identifies the error type
+	Title    string      `json:"title"`              // Short, human-readable summary
 	Status   int         `json:"status"`             // HTTP status code
 	Detail   string      `json:"detail,omitempty"`   // Human-readable explanation
 	Instance string      `json:"instance,omitempty"` // URI reference to specific occurrence
 	Extra    interface{} `json:"extra,omitempty"`    // Additional context
 }
 
-// AsProblem converts any error into a Problem.
-// If the error is not an Error type, returns a generic internal error Problem.
+// SetErrorBaseURI configures the base URI for error types.
+// Must include protocol (e.g., "https://") and should not end with a slash.
+func SetErrorBaseURI(uri string) *Error {
+	if uri == "" {
+		return NewValidationError("base URI cannot be empty").
+			WithDomain("opene").
+			WithOperation("set_base_uri").
+			WithMetadata(Metadata{
+				"provided_uri": uri,
+			})
+	}
+	if !strings.HasPrefix(uri, "http://") && !strings.HasPrefix(uri, "https://") {
+		return NewValidationError("base URI must include protocol (http:// or https://)").
+			WithDomain("opene").
+			WithOperation("set_base_uri").
+			WithMetadata(Metadata{
+				"provided_uri": uri,
+			})
+	}
+
+	// Remove trailing slash if present
+	errorBaseURI = strings.TrimSuffix(uri, "/")
+	return nil
+}
+
+// ResetErrorBaseURI resets the base URI to the default value
+func ResetErrorBaseURI() {
+	errorBaseURI = defaultBaseURI
+}
+
+// AsProblem converts an Error into a Problem (RFC 7807).
+// If err is not an Error type or is sensitive, returns a generic problem.
 func AsProblem(err error) *Problem {
+	// Set default problem for non-Error types and sensitive errors
 	var e *Error
-	if !errors.As(err, &e) {
+	if !errors.As(err, &e) || e.IsSensitive {
 		return &Problem{
-			Type:   uriForDomain("internal"),
+			Type:   errorBaseURI + "/internal",
 			Title:  "Internal Server Error",
 			Status: 500,
 		}
 	}
 
-	// For sensitive errors, return a generic 500 error
-	if e.IsSensitive {
-		return &Problem{
-			Type:   uriForDomain("internal"),
-			Title:  "Internal Server Error",
-			Status: 500,
-		}
-	}
-
+	// Convert to Problem using error details
 	return &Problem{
-		Type:   uriForDomain(e.Domain),
+		Type:   errorBaseURI + "/" + string(e.Code),
 		Title:  e.Message,
 		Status: e.StatusCode,
 		Detail: e.Error(),
 		Extra:  e.Meta,
 	}
-}
-
-func uriForDomain(domain string) string {
-	return errorBaseURI + domain
 }
