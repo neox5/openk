@@ -2,76 +2,45 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
-	"runtime/debug"
-	"time"
-
-	"github.com/neox5/openk/internal/server/httperror"
-	"github.com/neox5/openk/internal/storage"
 )
 
-// Config holds server configuration
-type Config struct {
-	// Server address in format "host:port"
-	Addr string
-
-	// Read timeout for entire request
-	ReadTimeout time.Duration
-
-	// Write timeout for response
-	WriteTimeout time.Duration
-
-	// Idle timeout for keepalive connections
-	IdleTimeout time.Duration
-
-	// Maximum header size
-	MaxHeaderBytes int
-
-	// Maximum body size
-	MaxBodySize int64
-}
-
-// Server represents the HTTP server instance
+// Server represents the HTTP server
 type Server struct {
-	config  Config
-	storage storage.MiniStorageBackend
-	server  *http.Server
-	mux     *http.ServeMux
+	config *Config
+	logger *slog.Logger
+	server *http.Server
+	mux    *http.ServeMux
 }
 
-// DefaultConfig returns server configuration with sensible defaults
-func DefaultConfig() Config {
-	return Config{
-		Addr:           ":8080",
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		IdleTimeout:    120 * time.Second,
-		MaxHeaderBytes: 1 << 20, // 1MB
-		MaxBodySize:    1 << 20, // 1MB
+// NewServer creates a new server instance
+func NewServer(cfg *Config, logger *slog.Logger) (*Server, error) {
+	if cfg == nil {
+		cfg = DefaultConfig()
 	}
-}
 
-// New creates a new server instance
-func New(config Config, storage storage.MiniStorageBackend) (*Server, error) {
-	if storage == nil {
-		return nil, fmt.Errorf("storage backend cannot be nil")
+	if err := cfg.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid configuration: %w", err)
+	}
+
+	if logger == nil {
+		logger = slog.Default()
 	}
 
 	s := &Server{
-		config:  config,
-		storage: storage,
-		mux:     http.NewServeMux(),
+		config: cfg,
+		logger: logger,
+		mux:    http.NewServeMux(),
 	}
 
-	// Initialize HTTP server with panic recovery
 	s.server = &http.Server{
-		Addr:           config.Addr,
-		Handler:        s.recoveryHandler(s.mux),
-		ReadTimeout:    config.ReadTimeout,
-		WriteTimeout:   config.WriteTimeout,
-		IdleTimeout:    config.IdleTimeout,
-		MaxHeaderBytes: config.MaxHeaderBytes,
+		Addr:         fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
+		Handler:      s.mux,
+		ReadTimeout:  cfg.ReadTimeout,
+		WriteTimeout: cfg.WriteTimeout,
 	}
 
 	// Register routes
@@ -80,45 +49,34 @@ func New(config Config, storage storage.MiniStorageBackend) (*Server, error) {
 	return s, nil
 }
 
-// recoveryHandler wraps an http.Handler with panic recovery
-func (s *Server) recoveryHandler(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if err := recover(); err != nil {
-				// Log the stack trace
-				debug.Stack()
-
-				// Return 500 to the client
-				httperror.WriteError(w, r, httperror.InternalError())
-			}
-		}()
-		next.ServeHTTP(w, r)
-	})
-}
-
 // Start begins listening for requests
 func (s *Server) Start() error {
+	s.logger.Info("starting server",
+		"address", s.server.Addr,
+		"read_timeout", s.config.ReadTimeout,
+		"write_timeout", s.config.WriteTimeout,
+	)
+
+	if s.config.EnableTLS {
+		// TODO: Implement TLS configuration
+		return errors.New("TLS not yet implemented")
+	}
+
 	return s.server.ListenAndServe()
 }
 
 // Shutdown gracefully stops the server
 func (s *Server) Shutdown(ctx context.Context) error {
-	return s.server.Shutdown(ctx)
+	s.logger.Info("shutting down server")
+
+	// Create a timeout context for shutdown
+	shutdownCtx, cancel := context.WithTimeout(ctx, s.config.ShutdownTimeout)
+	defer cancel()
+
+	return s.server.Shutdown(shutdownCtx)
 }
 
-// handleHealth returns the health check handler
-func (s *Server) handleHealth() http.HandlerFunc {
-	type healthResponse struct {
-		Status  string `json:"status"`
-		Version string `json:"version"`
-	}
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		resp := healthResponse{
-			Status:  "ok",
-			Version: "0.1.0", // TODO: Get from version package
-		}
-
-		httperror.WriteJSON(w, http.StatusOK, resp)
-	}
+// ServeHTTP implements the http.Handler interface
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.mux.ServeHTTP(w, r)
 }
