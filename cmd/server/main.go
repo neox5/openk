@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log/slog"
 	"os"
 
 	"github.com/neox5/openk/internal/ctx"
@@ -33,17 +32,13 @@ func main() {
 	// 4. Create server with service context
 	srv, err := server.NewServer(serviceCtx, serverCfg, logger)
 	if err != nil {
-		logger.LogAttrs(serviceCtx, slog.LevelError, "failed to create server",
-			slog.String("error", err.Error()),
-		)
+		logging.LogError(serviceCtx, logger, "server creation failed", err)
 		os.Exit(1)
 	}
 
 	// 5. Start server (using BaseContext configured in NewServer)
 	if err := srv.Start(); err != nil {
-		logger.LogAttrs(serviceCtx, slog.LevelError, "failed to start server",
-			slog.String("error", err.Error()),
-		)
+		logging.LogError(serviceCtx, logger, "server start failed", err)
 		os.Exit(1)
 	}
 }

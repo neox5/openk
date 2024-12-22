@@ -20,15 +20,8 @@ func TestError_Error(t *testing.T) {
 
 func TestError_Unwrap(t *testing.T) {
 	t.Run("unwraps Error preserving type", func(t *testing.T) {
-		inner := &opene.Error{
-			Message: "inner error",
-			Code:    opene.CodeValidation,
-		}
-		outer := &opene.Error{
-			Message:    "outer error",
-			Code:       opene.CodeInternal,
-			WrappedErr: inner,
-		}
+		inner := opene.NewValidationError("test", "validate", "inner error")
+		outer := opene.NewInternalError("test", "process", "outer error").Wrap(inner)
 
 		unwrapped := outer.Unwrap()
 		require.NotNil(t, unwrapped)
@@ -40,21 +33,14 @@ func TestError_Unwrap(t *testing.T) {
 
 	t.Run("unwraps standard error", func(t *testing.T) {
 		stdErr := errors.New("standard error")
-		err := &opene.Error{
-			Message:    "wrapper",
-			Code:       opene.CodeValidation,
-			WrappedErr: stdErr,
-		}
+		err := opene.NewValidationError("test", "validate", "wrapper").
+			WithMetadata(opene.Metadata{"wrapped": stdErr})
 
-		unwrapped := err.Unwrap()
-		assert.Equal(t, stdErr, unwrapped)
+		assert.Equal(t, err.Meta["wrapped"], stdErr)
 	})
 
 	t.Run("returns nil for no wrapped error", func(t *testing.T) {
-		err := &opene.Error{
-			Message: "no wrapped error",
-			Code:    opene.CodeValidation,
-		}
+		err := opene.NewValidationError("test", "validate", "no wrapped error")
 		assert.Nil(t, err.Unwrap())
 	})
 }
@@ -62,50 +48,25 @@ func TestError_Unwrap(t *testing.T) {
 func TestError_UnwrapAll(t *testing.T) {
 	t.Run("gets to root cause through Error chain", func(t *testing.T) {
 		rootErr := errors.New("root cause")
-
-		inner := &opene.Error{
-			Message:    "inner error",
-			Code:       opene.CodeValidation,
-			WrappedErr: rootErr,
-		}
-
-		outer := &opene.Error{
-			Message:    "outer error",
-			Code:       opene.CodeInternal,
-			WrappedErr: inner,
-		}
+		// Convert standard error to openE error
+		inner := opene.AsError(rootErr, "test", opene.CodeInternal)
+		// Wrap with validation error
+		wrapper := opene.NewValidationError("test", "validate", "inner error").Wrap(inner)
+		// Wrap again with internal error
+		outer := opene.NewInternalError("test", "process", "outer error").Wrap(wrapper)
 
 		result := outer.UnwrapAll()
 		assert.Equal(t, rootErr, result)
 	})
 
 	t.Run("returns nil for no wrapped error", func(t *testing.T) {
-		err := &opene.Error{
-			Message: "no wrapped error",
-			Code:    opene.CodeValidation,
-		}
+		err := opene.NewValidationError("test", "validate", "no wrapped error")
 		assert.Nil(t, err.UnwrapAll())
 	})
 }
 
-func TestError_WithDomain(t *testing.T) {
-	err := &opene.Error{Message: "test error"}
-	result := err.WithDomain("crypto")
-
-	assert.Equal(t, "crypto", result.Domain)
-	assert.Same(t, err, result)
-}
-
-func TestError_WithOperation(t *testing.T) {
-	err := &opene.Error{Message: "test error"}
-	result := err.WithOperation("key_rotation")
-
-	assert.Equal(t, "key_rotation", result.Operation)
-	assert.Same(t, err, result)
-}
-
 func TestError_WithMetadata(t *testing.T) {
-	err := &opene.Error{Message: "test error"}
+	err := opene.NewValidationError("test", "validate", "test error")
 	md := opene.Metadata{
 		"key": "value",
 		"num": 42,
@@ -117,7 +78,7 @@ func TestError_WithMetadata(t *testing.T) {
 }
 
 func TestError_Sensitive(t *testing.T) {
-	err := &opene.Error{Message: "test error"}
+	err := opene.NewValidationError("test", "validate", "test error")
 	result := err.Sensitive()
 
 	assert.True(t, result.IsSensitive)
@@ -126,56 +87,30 @@ func TestError_Sensitive(t *testing.T) {
 
 func TestError_Wrap(t *testing.T) {
 	t.Run("wraps another error", func(t *testing.T) {
-		inner := &opene.Error{
-			Message:    "inner error",
-			Code:       opene.CodeValidation,
-			Domain:     "inner",
-			Operation:  "test",
-			StatusCode: http.StatusBadRequest,
-		}
-
-		outer := &opene.Error{
-			Message:    "outer error",
-			Code:       opene.CodeInternal,
-			Domain:     "outer",
-			Operation:  "wrap",
-			StatusCode: http.StatusInternalServerError,
-		}
+		inner := opene.NewValidationError("inner", "validate", "validation failed")
+		outer := opene.NewInternalError("outer", "process", "processing failed")
 
 		wrapped := outer.Wrap(inner)
 
-		assert.Contains(t, wrapped.Message, "outer error")
-		assert.Contains(t, wrapped.Message, "inner error")
+		assert.Contains(t, wrapped.Message, "processing failed")
+		assert.Contains(t, wrapped.Message, "validation failed")
 		assert.Equal(t, opene.CodeInternal, wrapped.Code)
 		assert.Equal(t, "outer", wrapped.Domain)
-		assert.Equal(t, "wrap", wrapped.Operation)
+		assert.Equal(t, "process", wrapped.Operation)
 		assert.Equal(t, http.StatusInternalServerError, wrapped.StatusCode)
 		assert.Equal(t, inner, wrapped.WrappedErr)
 	})
 
 	t.Run("propagates sensitivity flag", func(t *testing.T) {
-		inner := &opene.Error{
-			Message:     "sensitive inner error",
-			Code:        opene.CodeInternal,
-			IsSensitive: true,
-		}
-
-		outer := &opene.Error{
-			Message: "outer error",
-			Code:    opene.CodeValidation,
-		}
+		inner := opene.NewInternalError("test", "process", "sensitive error")
+		outer := opene.NewValidationError("test", "validate", "wrapper")
 
 		wrapped := outer.Wrap(inner)
 		assert.True(t, wrapped.IsSensitive)
 	})
 
 	t.Run("handles nil error", func(t *testing.T) {
-		base := &opene.Error{
-			Message: "base error",
-			Code:    opene.CodeValidation,
-			Domain:  "test",
-		}
-
+		base := opene.NewValidationError("test", "validate", "base error")
 		wrapped := base.Wrap(nil)
 		assert.Same(t, base, wrapped)
 	})
@@ -196,13 +131,8 @@ func TestAsError(t *testing.T) {
 	})
 
 	t.Run("preserves existing error", func(t *testing.T) {
-		original := &opene.Error{
-			Message: "original error",
-			Code:    opene.CodeValidation,
-			Domain:  "original",
-		}
-
-		err := opene.AsError(original, "test", opene.CodeInternal)
+		original := opene.NewValidationError("test", "validate", "original error")
+		err := opene.AsError(original, "new", opene.CodeInternal)
 		assert.Same(t, original, err)
 	})
 

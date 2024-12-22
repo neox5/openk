@@ -19,7 +19,7 @@ func TestSetErrorBaseURI(t *testing.T) {
 		assert.Nil(t, err)
 
 		// Verify through a problem conversion
-		prob := opene.AsProblem(opene.NewValidationError("test"))
+		prob := opene.AsProblem(opene.NewValidationError("test", "validate", "test error"))
 		assert.Equal(t, "https://api.example.com/errors/validation", prob.Type)
 	})
 
@@ -32,7 +32,7 @@ func TestSetErrorBaseURI(t *testing.T) {
 		err := opene.SetErrorBaseURI("https://api.example.com/errors/")
 		assert.Nil(t, err)
 
-		prob := opene.AsProblem(opene.NewValidationError("test"))
+		prob := opene.AsProblem(opene.NewValidationError("test", "validate", "test error"))
 		assert.Equal(t, "https://api.example.com/errors/validation", prob.Type)
 	})
 
@@ -57,17 +57,11 @@ func TestSetErrorBaseURI(t *testing.T) {
 }
 
 func TestAsProblem(t *testing.T) {
-	t.Run("converts basic error to problem", func(t *testing.T) {
-		err := &opene.Error{
-			Message:    "validation failed",
-			Code:       opene.CodeValidation,
-			Domain:     "test",
-			Operation:  "validate",
-			StatusCode: http.StatusBadRequest,
-			Meta: opene.Metadata{
+	t.Run("converts validation error to problem", func(t *testing.T) {
+		err := opene.NewValidationError("test", "validate", "validation failed").
+			WithMetadata(opene.Metadata{
 				"field": "username",
-			},
-		}
+			})
 
 		prob := opene.AsProblem(err)
 		require.NotNil(t, prob)
@@ -83,17 +77,10 @@ func TestAsProblem(t *testing.T) {
 	})
 
 	t.Run("handles sensitive error", func(t *testing.T) {
-		err := &opene.Error{
-			Message:     "database error",
-			Code:        opene.CodeInternal,
-			Domain:      "db",
-			Operation:   "query",
-			StatusCode:  http.StatusInternalServerError,
-			IsSensitive: true,
-			Meta: opene.Metadata{
+		err := opene.NewInternalError("db", "query", "database error").
+			WithMetadata(opene.Metadata{
 				"query": "SELECT * FROM users",
-			},
-		}
+			})
 
 		prob := opene.AsProblem(err)
 		require.NotNil(t, prob)

@@ -38,18 +38,6 @@ func (e *Error) UnwrapAll() error {
 	return e.WrappedErr
 }
 
-// WithDomain sets the system component domain
-func (e *Error) WithDomain(domain string) *Error {
-	e.Domain = domain
-	return e
-}
-
-// WithOperation sets the operation type
-func (e *Error) WithOperation(op string) *Error {
-	e.Operation = op
-	return e
-}
-
 // WithMetadata adds metadata to the error
 func (e *Error) WithMetadata(md Metadata) *Error {
 	e.Meta = md

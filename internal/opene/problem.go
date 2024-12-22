@@ -23,17 +23,13 @@ type Problem struct {
 // Must include protocol (e.g., "https://") and should not end with a slash.
 func SetErrorBaseURI(uri string) *Error {
 	if uri == "" {
-		return NewValidationError("base URI cannot be empty").
-			WithDomain("opene").
-			WithOperation("set_base_uri").
+		return NewValidationError("opene", "set_base_uri", "base URI cannot be empty").
 			WithMetadata(Metadata{
 				"provided_uri": uri,
 			})
 	}
 	if !strings.HasPrefix(uri, "http://") && !strings.HasPrefix(uri, "https://") {
-		return NewValidationError("base URI must include protocol (http:// or https://)").
-			WithDomain("opene").
-			WithOperation("set_base_uri").
+		return NewValidationError("opene", "set_base_uri", "base URI must include protocol (http:// or https://)").
 			WithMetadata(Metadata{
 				"provided_uri": uri,
 			})

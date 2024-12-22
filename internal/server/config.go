@@ -1,13 +1,9 @@
 package server
 
 import (
-	"errors"
 	"time"
-)
 
-var (
-	ErrInvalidPort = errors.New("port must be between 1 and 65535")
-	ErrInvalidHost = errors.New("host cannot be empty")
+	"github.com/neox5/openk/internal/opene"
 )
 
 type Config struct {
@@ -32,11 +28,14 @@ func DefaultConfig() *Config {
 
 func (c *Config) Validate() error {
 	if c.Host == "" {
-		return ErrInvalidHost
+		return opene.NewValidationError("server", "validate_config", "host cannot be empty")
 	}
 
 	if c.Port < 1 || c.Port > 65535 {
-		return ErrInvalidPort
+		return opene.NewValidationError("server", "validate_config", "port must be between 1 and 65535").
+			WithMetadata(opene.Metadata{
+				"value": c.Port,
+			})
 	}
 
 	return nil

@@ -2,11 +2,13 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
+
+	"github.com/neox5/openk/internal/logging"
+	"github.com/neox5/openk/internal/opene"
 )
 
 type Server struct {
@@ -22,10 +24,8 @@ func NewServer(ctx context.Context, cfg *Config, logger *slog.Logger) (*Server, 
 	}
 
 	if err := cfg.Validate(); err != nil {
-		logger.LogAttrs(ctx, slog.LevelError, "invalid server configuration",
-			slog.String("error", err.Error()),
-		)
-		return nil, fmt.Errorf("invalid configuration: %w", err)
+		logging.LogError(ctx, logger, "invalid server configuration", err)
+		return nil, err // Error is already openE type from Validate()
 	}
 
 	if logger == nil {
@@ -60,8 +60,16 @@ func (s *Server) Start() error {
 	)
 
 	if s.config.EnableTLS {
-		return errors.New("TLS not yet implemented")
+		return opene.NewInternalError("server", "start", "TLS support not implemented")
 	}
 
-	return s.server.ListenAndServe()
+	if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		return opene.NewInternalError("server", "start", "server startup failed").
+			WithMetadata(opene.Metadata{
+				"address": s.server.Addr,
+			}).
+			Wrap(opene.AsError(err, "http", opene.CodeInternal))
+	}
+
+	return nil
 }
