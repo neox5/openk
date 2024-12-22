@@ -1,4 +1,7 @@
 .
+├── cmd
+│   └── server
+│       └── main.go
 ├── docs
 │   ├── adr
 │   │   ├── 001_screte-field-format.md
@@ -12,6 +15,7 @@
 │   │   ├── 009_key_derivation_architecture.md
 │   │   ├── 010_http_error_handling_standard.md
 │   │   ├── 011_package_structure.md
+│   │   ├── 012_logging_architecture.md
 │   │   └── _ADR-GUIDE.md
 │   ├── misc
 │   │   └── openk-banner.md
@@ -43,6 +47,10 @@
 │   │   ├── rsa_test.go
 │   │   ├── secure_wipe.go
 │   │   └── secure_wipe_test.go
+│   ├── ctx
+│   │   ├── context.go
+│   │   ├── context_test.go
+│   │   └── key.go
 │   ├── kms
 │   │   ├── dek.go
 │   │   ├── dek_test.go
@@ -53,15 +61,33 @@
 │   │   ├── key_pair_test.go
 │   │   ├── master_key.go
 │   │   └── master_key_test.go
+│   ├── logging
+│   │   ├── examples
+│   │   │   └── main.go
+│   │   └── logging.go
 │   ├── opene
-│   │   ├── base.go
+│   │   ├── code.go
+│   │   ├── error.go
+│   │   ├── error_test.go
+│   │   ├── example_test.go
 │   │   ├── predefined.go
-│   │   └── problem.go
+│   │   ├── predefined_test.go
+│   │   ├── problem.go
+│   │   └── problem_test.go
 │   ├── secret
 │   │   ├── field.go
 │   │   ├── mini_secret.go
 │   │   └── secret.go
 │   ├── server
+│   │   ├── health
+│   │   │   ├── handler.go
+│   │   │   └── response.go
+│   │   ├── middleware
+│   │   │   └── logging.go
+│   │   ├── config.go
+│   │   ├── routes.go
+│   │   └── server.go
+│   ├── server_bak
 │   │   ├── handler
 │   │   │   └── derivation_v1.go
 │   │   ├── httperror
@@ -80,8 +106,11 @@
 ├── go.mod
 ├── go.sum
 ├── LICENSE
+├── openk-implementation-plan.md
+├── openk-observability-draft.md
+├── openk-server-impl.md
 ├── openk-todo.md
 ├── README.md
 └── repo_dir.txt
 
-17 directories, 68 files
+25 directories, 89 files
