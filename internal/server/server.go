@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 )
 
-// Server represents the HTTP server
 type Server struct {
 	config *Config
 	logger *slog.Logger
@@ -16,13 +16,15 @@ type Server struct {
 	mux    *http.ServeMux
 }
 
-// NewServer creates a new server instance
-func NewServer(cfg *Config, logger *slog.Logger) (*Server, error) {
+func NewServer(ctx context.Context, cfg *Config, logger *slog.Logger) (*Server, error) {
 	if cfg == nil {
 		cfg = DefaultConfig()
 	}
 
 	if err := cfg.Validate(); err != nil {
+		logger.LogAttrs(ctx, slog.LevelError, "invalid server configuration",
+			slog.String("error", err.Error()),
+		)
 		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
 
@@ -41,42 +43,25 @@ func NewServer(cfg *Config, logger *slog.Logger) (*Server, error) {
 		Handler:      s.mux,
 		ReadTimeout:  cfg.ReadTimeout,
 		WriteTimeout: cfg.WriteTimeout,
+		BaseContext: func(l net.Listener) context.Context {
+			return ctx
+		},
 	}
 
-	// Register routes
 	s.registerRoutes()
-
 	return s, nil
 }
 
-// Start begins listening for requests
 func (s *Server) Start() error {
-	s.logger.Info("starting server",
-		"address", s.server.Addr,
-		"read_timeout", s.config.ReadTimeout,
-		"write_timeout", s.config.WriteTimeout,
+	s.logger.LogAttrs(s.server.BaseContext(nil), slog.LevelInfo, "starting server",
+		slog.String("address", s.server.Addr),
+		slog.Duration("read_timeout", s.config.ReadTimeout),
+		slog.Duration("write_timeout", s.config.WriteTimeout),
 	)
 
 	if s.config.EnableTLS {
-		// TODO: Implement TLS configuration
 		return errors.New("TLS not yet implemented")
 	}
 
 	return s.server.ListenAndServe()
-}
-
-// Shutdown gracefully stops the server
-func (s *Server) Shutdown(ctx context.Context) error {
-	s.logger.Info("shutting down server")
-
-	// Create a timeout context for shutdown
-	shutdownCtx, cancel := context.WithTimeout(ctx, s.config.ShutdownTimeout)
-	defer cancel()
-
-	return s.server.Shutdown(shutdownCtx)
-}
-
-// ServeHTTP implements the http.Handler interface
-func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.mux.ServeHTTP(w, r)
 }

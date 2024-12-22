@@ -2,45 +2,54 @@ package main
 
 import (
 	"context"
-	"errors"
-	"log"
 	"log/slog"
-	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 
+	"github.com/neox5/openk/internal/ctx"
+	"github.com/neox5/openk/internal/logging"
 	"github.com/neox5/openk/internal/server"
 )
 
+const (
+	serviceName    = "openk"
+	serviceVersion = "0.1.0" // This should come from build info
+)
+
 func main() {
-	// Create logger
-	logger := slog.Default()
+	// 1. Create base context with service info (FIRST!)
+	serviceCtx := ctx.WithService(context.Background(),
+		serviceName,
+		serviceVersion,
+		generateInstanceID(),
+	)
 
-	// Create server config
-	cfg := server.DefaultConfig()
+	// 2. Initialize logger with service context
+	cfg := logging.DefaultConfig()
+	logger := logging.InitLogger(cfg)
 
-	// Create server instance
-	srv, err := server.NewServer(cfg, logger)
+	// 3. Create server config
+	serverCfg := server.DefaultConfig()
+
+	// 4. Create server with service context
+	srv, err := server.NewServer(serviceCtx, serverCfg, logger)
 	if err != nil {
-		log.Fatal(err)
+		logger.LogAttrs(serviceCtx, slog.LevelError, "failed to create server",
+			slog.String("error", err.Error()),
+		)
+		os.Exit(1)
 	}
 
-	// Start server in a goroutine
-	go func() {
-		if err := srv.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatal(err)
-		}
-	}()
-
-	// Wait for shutdown signal
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-
-	// Graceful shutdown
-	ctx := context.Background()
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal(err)
+	// 5. Start server (using BaseContext configured in NewServer)
+	if err := srv.Start(); err != nil {
+		logger.LogAttrs(serviceCtx, slog.LevelError, "failed to start server",
+			slog.String("error", err.Error()),
+		)
+		os.Exit(1)
 	}
+}
+
+// generateInstanceID creates a unique identifier for this service instance
+func generateInstanceID() string {
+	// TODO: Implement proper instance ID generation
+	return "dev-instance"
 }

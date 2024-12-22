@@ -10,22 +10,15 @@ var (
 	ErrInvalidHost = errors.New("host cannot be empty")
 )
 
-// Config defines the HTTP server configuration
 type Config struct {
-	// Basic server settings
-	Host string // Server host
-	Port int    // Server port
-
-	// Timeouts
-	ReadTimeout     time.Duration // Maximum duration for reading entire request
-	WriteTimeout    time.Duration // Maximum duration for writing response
-	ShutdownTimeout time.Duration // Maximum duration to wait for server shutdown
-
-	// Additional options
-	EnableTLS bool // Enable TLS/HTTPS
+	Host            string
+	Port            int
+	ReadTimeout     time.Duration
+	WriteTimeout    time.Duration
+	ShutdownTimeout time.Duration
+	EnableTLS       bool
 }
 
-// DefaultConfig returns a new Config instance with default values
 func DefaultConfig() *Config {
 	return &Config{
 		Host:            "0.0.0.0",
@@ -37,7 +30,6 @@ func DefaultConfig() *Config {
 	}
 }
 
-// Validate checks if the configuration is valid
 func (c *Config) Validate() error {
 	if c.Host == "" {
 		return ErrInvalidHost
