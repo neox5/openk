@@ -30,6 +30,9 @@
 │   ├── shared-vision.md
 │   └── TESTING_GUIDE.md
 ├── internal
+│   ├── buildinfo
+│   │   ├── info.go
+│   │   └── info_test.go
 │   ├── crypto
 │   │   ├── aes_gcm.go
 │   │   ├── aes_gcm_test.go
@@ -64,6 +67,8 @@
 │   ├── logging
 │   │   ├── examples
 │   │   │   └── main.go
+│   │   ├── benchmark_test.go
+│   │   ├── error.go
 │   │   └── logging.go
 │   ├── opene
 │   │   ├── code.go
@@ -103,9 +108,13 @@
 │       ├── memory_backend.go
 │       ├── mini_storage_backend.go
 │       └── storage_backend.go
+├── context-logging-design.md
+├── context-logging-todos.md
 ├── go.mod
 ├── go.sum
 ├── LICENSE
+├── makefile
+├── openk-cli-implementation-plan.md
 ├── openk-implementation-plan.md
 ├── openk-observability-draft.md
 ├── openk-server-impl.md
@@ -113,4 +122,4 @@
 ├── README.md
 └── repo_dir.txt
 
-25 directories, 89 files
+26 directories, 97 files
