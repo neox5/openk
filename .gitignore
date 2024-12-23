@@ -1,0 +1,19 @@
+# Binary output
+/bin/
+
+# Go specific
+*.test
+*.out
+/vendor/
+
+# IDE configs
+.idea/
+.vscode/
+
+# Debug files
+*.log
+
+# OS files
+.DS_Store
+*~
+.*.swp
