@@ -13,7 +13,7 @@ LDFLAGS=-ldflags "\
 
 .PHONY: build
 build:
-	go build ${LDFLAGS} -o bin/openk ./cmd/server
+	go build ${LDFLAGS} -o bin/openk ./cmd/openk
 
 .PHONY: install
 install:
