@@ -21,4 +21,8 @@ install:
 
 .PHONY: test
 test:
+	go test ./...
+
+.PHONY: test-verbose
+test-verbose:
 	go test -v ./...
