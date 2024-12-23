@@ -7,11 +7,7 @@ import (
 	"github.com/neox5/openk/internal/buildinfo"
 )
 
-func version(ctx context.Context, short bool) error {
-	if short {
-		fmt.Println(buildinfo.Get().ShortVersion())
-	} else {
-		fmt.Println(buildinfo.Get())
-	}
+func version(ctx context.Context) error {
+	fmt.Println(buildinfo.Get())
 	return nil
 }
