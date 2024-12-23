@@ -1,6 +1,8 @@
 .
+├── bin
+│   └── openk
 ├── cmd
-│   └── server
+│   └── openk
 │       └── main.go
 ├── docs
 │   ├── adr
@@ -30,9 +32,17 @@
 │   ├── shared-vision.md
 │   └── TESTING_GUIDE.md
 ├── internal
+│   ├── app
+│   │   ├── context.go
+│   │   └── server.go
 │   ├── buildinfo
 │   │   ├── info.go
 │   │   └── info_test.go
+│   ├── cli
+│   │   ├── server
+│   │   │   ├── command.go
+│   │   │   └── start.go
+│   │   └── cli.go
 │   ├── crypto
 │   │   ├── aes_gcm.go
 │   │   ├── aes_gcm_test.go
@@ -92,17 +102,6 @@
 │   │   ├── config.go
 │   │   ├── routes.go
 │   │   └── server.go
-│   ├── server_bak
-│   │   ├── handler
-│   │   │   └── derivation_v1.go
-│   │   ├── httperror
-│   │   │   └── httperror.go
-│   │   ├── middleware
-│   │   │   └── body_limit_middleware.go
-│   │   ├── response
-│   │   │   └── writer.go
-│   │   ├── routes.go
-│   │   └── server.go
 │   └── storage
 │       ├── in_memory_mini_storage.go
 │       ├── memory_backend.go
@@ -114,7 +113,6 @@
 ├── go.sum
 ├── LICENSE
 ├── makefile
-├── openk-cli-implementation-plan.md
 ├── openk-implementation-plan.md
 ├── openk-observability-draft.md
 ├── openk-server-impl.md
@@ -122,4 +120,4 @@
 ├── README.md
 └── repo_dir.txt
 
-26 directories, 97 files
+25 directories, 96 files

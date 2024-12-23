@@ -2,23 +2,36 @@ package cli
 
 import (
 	"context"
-	"flag"
 	"fmt"
+	"os"
+
+	"github.com/neox5/openk/internal/buildinfo"
+	"github.com/neox5/openk/internal/cli/server"
+	"github.com/urfave/cli/v2"
 )
 
 func Execute(ctx context.Context) error {
-	flag.Parse()
-
-	if len(flag.Args()) < 1 {
-		return fmt.Errorf("no command specified")
+	app := &cli.App{
+		Name:  "openK",
+		Usage: "openK secret management system",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    "version",
+				Aliases: []string{"v"},
+				Usage:   "Show version information",
+			},
+		},
+		Commands: []*cli.Command{
+			server.NewCommand(),
+		},
+		Action: func(c *cli.Context) error {
+			if c.Bool("version") {
+				fmt.Println(buildinfo.Get())
+				return nil
+			}
+			return cli.ShowAppHelp(c)
+		},
 	}
 
-	switch flag.Arg(0) {
-	case "version":
-		return version(ctx)
-	case "server":
-		return serverStart(ctx)
-	default:
-		return fmt.Errorf("unknown command: %s", flag.Arg(0))
-	}
+	return app.RunContext(ctx, os.Args)
 }
