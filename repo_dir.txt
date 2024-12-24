@@ -39,6 +39,10 @@
 │   │   ├── info.go
 │   │   └── info_test.go
 │   ├── cli
+│   │   ├── auth
+│   │   │   ├── command.go
+│   │   │   ├── login.go
+│   │   │   └── register.go
 │   │   ├── server
 │   │   │   ├── command.go
 │   │   │   └── start.go
@@ -113,10 +117,11 @@
 ├── go.sum
 ├── LICENSE
 ├── makefile
+├── openk-auth-impl-plan.md
 ├── openk-implementation-plan.md
 ├── openk-observability-draft.md
 ├── openk-todo.md
 ├── README.md
 └── repo_dir.txt
 
-25 directories, 95 files
+26 directories, 99 files
