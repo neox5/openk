@@ -1,0 +1,16 @@
+version: v1
+plugins:
+  - plugin: go
+    out: openk/api/v1/gen
+    opt:
+      - paths=source_relative
+  - plugin: go-grpc
+    out: openk/api/v1/gen
+    opt:
+      - paths=source_relative
+  - plugin: grpc-gateway
+    out: openk/api/v1/gen
+    opt:
+      - paths=source_relative
+  - plugin: openapiv2
+    out: openk/api/v1/gen/openapiv2

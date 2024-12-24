@@ -26,3 +26,15 @@ test:
 .PHONY: test-verbose
 test-verbose:
 	go test -v ./...
+
+.PHONY: proto
+proto:
+	buf generate
+
+.PHONY: proto-lint
+proto-lint:
+	buf lint
+
+.PHONY: proto-breaking
+proto-breaking:
+	buf breaking --against 'https://github.com/neox5/openk.git#branch=main'

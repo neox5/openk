@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package api.v1;
+
+option go_package = "github.com/neox5/openk/api/v1/gen";
+
+import "google/protobuf/timestamp.proto";
+
+// HealthService provides health check functionality for the OpenK server
+service HealthService {
+  // Check returns the current health status of the server
+  rpc Check(CheckRequest) returns (CheckResponse) {}
+}
+
+// CheckRequest is empty for now but allows for future extension
+message CheckRequest {}
+
+// CheckResponse contains server health information
+message CheckResponse {
+  // Status represents the current server health status
+  Status status = 1;
+  
+  // Timestamp indicates when the health check was performed
+  google.protobuf.Timestamp timestamp = 2;
+  
+  // Uptime indicates how long the server has been running
+  string uptime = 3;
+  
+  // Version contains build information (optional)
+  string version = 4;
+}
+
+// Status represents possible health states
+enum Status {
+  // STATUS_UNSPECIFIED represents an unknown state
+  STATUS_UNSPECIFIED = 0;
+  
+  // STATUS_OK indicates the server is healthy
+  STATUS_OK = 1;
+  
+  // STATUS_DEGRADED indicates partial functionality
+  STATUS_DEGRADED = 2;
+  
+  // STATUS_UNHEALTHY indicates the server is not functioning
+  STATUS_UNHEALTHY = 3;
+}
