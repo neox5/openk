@@ -79,7 +79,7 @@
 │   │   │   └── main.go
 │   │   ├── benchmark_test.go
 │   │   ├── error.go
-│   │   └── logging.go
+│   │   └── logger.go
 │   ├── opene
 │   │   ├── code.go
 │   │   ├── error.go
@@ -115,9 +115,8 @@
 ├── makefile
 ├── openk-implementation-plan.md
 ├── openk-observability-draft.md
-├── openk-server-impl.md
 ├── openk-todo.md
 ├── README.md
 └── repo_dir.txt
 
-25 directories, 96 files
+25 directories, 95 files
