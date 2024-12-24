@@ -10,23 +10,10 @@ func newStartCommand() *cli.Command {
 		Name:  "start",
 		Usage: "Start the openK server",
 		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:    "config",
-				Aliases: []string{"c"},
-				Usage:   "Path to config file",
-				EnvVars: []string{"OPENK_CONFIG"},
-			},
-			&cli.StringFlag{
-				Name:    "log-level",
-				Usage:   "Log level (debug, info, warn, error)",
-				Value:   "info",
-				EnvVars: []string{"OPENK_LOG_LEVEL"},
-			},
+			// Server-specific flags would go here
 		},
-		Action: runServer,
+		Action: func(c *cli.Context) error {
+			return app.StartServer()
+		},
 	}
-}
-
-func runServer(c *cli.Context) error {
-	return app.StartServer(c.Context)
 }

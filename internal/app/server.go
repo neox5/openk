@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"log/slog"
 
 	"github.com/neox5/openk/internal/buildinfo"
@@ -9,7 +8,10 @@ import (
 	"github.com/neox5/openk/internal/server"
 )
 
-func StartServer(ctx context.Context) error {
+func StartServer() error {
+	// Create fresh application context
+	ctx := NewContext()
+
 	info := buildinfo.Get()
 
 	// Initialize logger
@@ -24,7 +26,7 @@ func StartServer(ctx context.Context) error {
 		slog.String("go_version", info.GoVersion),
 	)
 
-	// Create server
+	// Create and start server
 	serverCfg := server.DefaultConfig()
 	srv, err := server.NewServer(ctx, serverCfg, logger)
 	if err != nil {

@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -10,7 +9,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func Execute(ctx context.Context) error {
+func Execute() error {
 	app := &cli.App{
 		Name:  "openK",
 		Usage: "openK secret management system",
@@ -33,5 +32,5 @@ func Execute(ctx context.Context) error {
 		},
 	}
 
-	return app.RunContext(ctx, os.Args)
+	return app.Run(os.Args)
 }

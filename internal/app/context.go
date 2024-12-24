@@ -10,9 +10,9 @@ import (
 const serviceName = "openk"
 
 // NewContext creates the base application context with service information
-func NewContext(parent context.Context) context.Context {
+func NewContext() context.Context {
 	info := buildinfo.Get()
-	return ctx.WithService(parent,
+	return ctx.WithService(context.Background(),
 		serviceName,
 		info.ShortVersion(),
 		generateInstanceID(),
