@@ -1,6 +1,9 @@
 # Binary output
 /bin/
 
+# Generated code
+/api/v1/gen/
+
 # Go specific
 *.test
 *.out

@@ -2,32 +2,34 @@
 
 ## Directory Structure
 ```
+api/                      # API package
+└── v1/                  
+    ├── health.proto
+    ├── common.proto
+    └── gen/             # Generated code (gitignored)
+        ├── health/
+        └── common/
 internal/
-├── api/                       # API definitions
-│   └── v1/                  
-│       ├── health.proto      # Health service definition
-│       └── common.proto      # Common message types
 ├── server/
-│   ├── grpc.go              # gRPC server setup
-│   ├── gateway.go           # REST gateway setup
+│   ├── grpc.go         # gRPC server setup
+│   ├── gateway.go      # REST gateway setup
 │   └── health/             
-│       ├── service.go       # Health service implementation
-│       └── gateway.go       # REST mapping handlers
-├── service/                  # Core business logic
-│   └── health/
-│       └── service.go       # Health check logic
-└── gen/                     # Generated code
-    └── v1/                  # Generated API code
-        └── health/
+│       ├── service.go  # Health service implementation
+│       └── gateway.go  # REST mapping handlers
+└── service/            # Core business logic
+    └── health/
+        └── service.go  # Health check logic
 ```
 
 ## Implementation Steps
 
-### 1. Proto Definition
-- [ ] Define health service proto
-- [ ] Add common message types
-- [ ] Set up buf for proto management
-- [ ] Configure protoc generation
+### 1. Proto Definition ✓
+- [x] Define health service proto in api/v1/health.proto
+- [x] Add common types in api/v1/common.proto
+- [x] Set up buf for proto management (version: v1beta1)
+- [x] Configure protoc generation
+- [x] Add required tools documentation
+- [x] Configure .gitignore for generated code
 
 ### 2. gRPC Server
 - [ ] Core gRPC server setup
@@ -73,20 +75,6 @@ internal/
 - OpenAPI specs
 - Usage examples
 
-## Next Implementation Phase
-1. Proto definition and setup
-   - Health service proto
-   - Code generation
-   - Initial tests
-2. Core gRPC server
-   - Base server setup
-   - Health implementation
-   - Middleware integration
-3. Gateway integration
-   - REST server setup
-   - Endpoint mapping
-   - Error handling
-4. Testing
-   - Unit test framework
-   - Integration tests
-   - Performance benchmarks
+## Next Steps
+1. Core gRPC server setup in internal/server/grpc.go
+2. Initial health service implementation
