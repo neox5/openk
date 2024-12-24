@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/neox5/openk/internal/buildinfo"
+	"github.com/neox5/openk/internal/cli/auth"
 	"github.com/neox5/openk/internal/cli/server"
 	"github.com/urfave/cli/v2"
 )
@@ -22,6 +23,7 @@ func Execute() error {
 		},
 		Commands: []*cli.Command{
 			server.NewCommand(),
+			auth.NewCommand(),
 		},
 		Action: func(c *cli.Context) error {
 			if c.Bool("version") {

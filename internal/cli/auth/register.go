@@ -1,31 +1,45 @@
 package auth
 
-import "github.com/urfave/cli/v2"
+import (
+	"github.com/neox5/openk/internal/app/client"
+	"github.com/urfave/cli/v2"
+)
 
-// newRegisterCommand creates the register subcommand
 func newRegisterCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "register",
 		Usage: "Register a new user",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:     "username",
-				Aliases:  []string{"u"},
-				Usage:    "Username for registration",
-				Required: true,
+				Name:    "username",
+				Aliases: []string{"u"},
+				Usage:   "Username for registration",
 			},
 			&cli.StringFlag{
 				Name:    "password",
 				Aliases: []string{"p"},
-				Usage:   "Password for registration (if not provided, will prompt securely)",
+				Usage:   "Password for registration",
 			},
 		},
 		Action: registerAction,
 	}
 }
 
-// registerAction handles the register command execution
 func registerAction(c *cli.Context) error {
-	// TODO: Implement registration logic
-	return nil
+	username, err := readUsername(c.String("username"))
+	if err != nil {
+		return err
+	}
+
+	password, err := readPassword(c.String("password"), true)
+	if err != nil {
+		return err
+	}
+
+	opts := client.RegisterOptions{
+		Username: username,
+		Password: password,
+	}
+	
+	return client.Register(c.Context, opts)
 }

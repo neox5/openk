@@ -1,31 +1,45 @@
 package auth
 
-import "github.com/urfave/cli/v2"
+import (
+	"github.com/neox5/openk/internal/app/client"
+	"github.com/urfave/cli/v2"
+)
 
-// newLoginCommand creates the login subcommand
 func newLoginCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "login",
 		Usage: "Login with existing credentials",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:     "username",
-				Aliases:  []string{"u"},
-				Usage:    "Username for login",
-				Required: true,
+				Name:    "username",
+				Aliases: []string{"u"},
+				Usage:   "Username for login",
 			},
 			&cli.StringFlag{
 				Name:    "password",
 				Aliases: []string{"p"},
-				Usage:   "Password for login (if not provided, will prompt securely)",
+				Usage:   "Password for login",
 			},
 		},
 		Action: loginAction,
 	}
 }
 
-// loginAction handles the login command execution
 func loginAction(c *cli.Context) error {
-	// TODO: Implement login logic
-	return nil
+	username, err := readUsername(c.String("username"))
+	if err != nil {
+		return err
+	}
+
+	password, err := readPassword(c.String("password"), false)
+	if err != nil {
+		return err
+	}
+
+	opts := client.LoginOptions{
+		Username: username,
+		Password: password,
+	}
+
+	return client.Login(c.Context, opts)
 }

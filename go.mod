@@ -18,7 +18,8 @@ require (
 	github.com/samber/lo v1.44.0 // indirect
 	github.com/samber/slog-common v0.17.1 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
-	golang.org/x/sys v0.27.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/term v0.27.0 // indirect
 	golang.org/x/text v0.20.0 // indirect
 )
 

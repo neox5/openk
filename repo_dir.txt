@@ -33,6 +33,9 @@
 │   └── TESTING_GUIDE.md
 ├── internal
 │   ├── app
+│   │   ├── client
+│   │   │   ├── login.go
+│   │   │   └── register.go
 │   │   ├── context.go
 │   │   └── server.go
 │   ├── buildinfo
@@ -41,6 +44,7 @@
 │   ├── cli
 │   │   ├── auth
 │   │   │   ├── command.go
+│   │   │   ├── input.go
 │   │   │   ├── login.go
 │   │   │   └── register.go
 │   │   ├── server
@@ -118,10 +122,11 @@
 ├── LICENSE
 ├── makefile
 ├── openk-auth-impl-plan.md
+├── openk-grpc-impl-plan.md
 ├── openk-implementation-plan.md
 ├── openk-observability-draft.md
 ├── openk-todo.md
 ├── README.md
 └── repo_dir.txt
 
-26 directories, 99 files
+27 directories, 103 files

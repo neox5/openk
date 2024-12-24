@@ -1,97 +1,87 @@
-# OpenK Authentication Implementation Plan - Revised
+# OpenK Authentication Implementation Plan
 
 ## Directory Structure
 ```
 internal/
   ├── app/
-  │   ├── context.go     # Existing: app context
-  │   ├── server.go      # Existing: StartServer()
-  │   ├── client.go      # New: Client operations including auth
+  │   ├── client/
+  │   │   ├── http.go       # HTTP client implementation
+  │   │   ├── auth.go       # Derive encryption operations
+  │   │   ├── register.go   # Registration implementation [✓]
+  │   │   └── login.go      # Login implementation [✓]
   ├── cli/
-  │   ├── auth/          # Completed: CLI commands
-  │   │   ├── command.go
-  │   │   ├── login.go
-  │   │   └── register.go
+  │   ├── auth/             # CLI commands [✓]
+  │   │   ├── command.go    # Command group setup [✓]
+  │   │   ├── input.go      # Shared input functions [✓]
+  │   │   ├── register.go   # Register command [✓]
+  │   │   └── login.go      # Login command [✓]
 ```
 
-## Implementation Checklist
+## Implementation Steps
 
-### 1. CLI Layer [Partially Complete]
-- [x] Create auth command group (`cli/auth/command.go`)
-  - [x] Define command structure
-  - [x] Add help documentation
-  - [x] Integrate with root CLI
-- [x] Implement register subcommand structure (`cli/auth/register.go`)
-  - [x] Define flags and parameters
-  - [x] Create command skeleton
-  - [ ] Add input validation
-  - [ ] Implement secure password input
-  - [ ] Connect to app.RegisterUser()
-- [x] Implement login subcommand structure (`cli/auth/login.go`)
-  - [x] Define flags and parameters
-  - [x] Create command skeleton
-  - [ ] Add input validation
-  - [ ] Implement secure password input
-  - [ ] Connect to app.LoginUser()
-- [ ] Add comprehensive CLI tests
+### 1. CLI Layer [✓ Complete]
+- [x] Command group setup with help docs
+- [x] Shared input functions
+- [x] Register command implementation
+- [x] Login command implementation
+- [x] Basic empty-checks validation
+- [x] Secure password input handling
 
-### 2. Client Implementation [To Do]
-- [ ] Implement client.go in app package
-  - [ ] HTTP client setup
-  - [ ] Key derivation (PBKDF2)
-  - [ ] KeyPair management
-  - [ ] Memory security
-  - [ ] Core functions:
-    ```go
-    func RegisterUser(ctx context.Context, username, password string) error
-    func LoginUser(ctx context.Context, username, password string) error
-    ```
-  - [ ] Error handling using opene package
-  - [ ] Unit tests
-  - [ ] Integration tests
+### 2. Client Implementation [Next]
+#### 2.1 HTTP Client Setup
+- [ ] Create http.go with base client
+- [ ] Request/response types
+- [ ] Error handling with opene package
+- [ ] Context and timeout handling
+- [ ] Unit tests for HTTP layer
 
-### 3. Integration [To Do]
-- [ ] Wire up CLI commands with app.client functions
-  - [ ] Error handling and display
-  - [ ] Progress indication
-- [ ] Add integration tests
-  - [ ] End-to-end flows
-  - [ ] Error scenarios
-  - [ ] Performance testing
+#### 2.2 Auth Operations
+- [ ] Implement key derivation (PBKDF2)
+- [ ] KeyPair generation
+- [ ] Envelope encryption
+- [ ] Memory security
+- [ ] Unit tests for crypto operations
+
+#### 2.3 Core Functions
+- [ ] RegisterUser implementation
+- [ ] LoginUser implementation
+- [ ] Session management
+- [ ] Integration tests
+
+### 3. Integration [Future]
+- [ ] Wire CLI to client functions
+- [ ] Progress indication
+- [ ] Error display formatting
+- [ ] End-to-end tests
+- [ ] Performance testing
 
 ## Success Criteria
-1. Complete user registration flow:
-   - Secure password handling
-   - Client-side key derivation
-   - Protected key material transmission
+1. User Registration Flow
+   - Password security
+   - Key derivation
+   - Protected key transmission
    - Clear error handling
 
-2. Complete user login flow:
+2. User Login Flow
    - Secure credential handling
    - Session establishment
-   - Protected key material handling
-   - Clear error messaging
+   - Protected key handling
+   - Error messages
 
-3. Security Requirements:
+3. Security Requirements
    - Follows crypto-spec.md
-   - Secure memory handling
-   - Protected key material
-   - Zero-knowledge architecture
-
-4. Quality Requirements:
+   - Memory protection
+   - Zero-knowledge arch
    - Test coverage
-   - Error handling using opene
-   - Input validation
-   - Performance monitoring
 
-## Next Steps
-1. Create initial client.go with RegisterUser/LoginUser functions
-2. Complete CLI password handling and validation
-3. Connect CLI commands to client functions
-4. Add tests
+## Next Steps Priority
+1. HTTP client implementation
+2. Auth crypto operations
+3. Core function wiring
+4. Integration testing
 
 ## Future Considerations
 - Session management
-- Password rotation
-- Multi-factor authentication
+- Password change flow
+- Multi-factor auth
 - Technical client support
