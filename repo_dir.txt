@@ -1,4 +1,18 @@
 .
+├── api
+│   └── v1
+│       ├── gen
+│       │   ├── api
+│       │   │   └── v1
+│       │   │       ├── common.pb.go
+│       │   │       ├── health_grpc.pb.go
+│       │   │       └── health.pb.go
+│       │   ├── common
+│       │   ├── health
+│       │   └── openapiv2
+│       │       └── api.swagger.json
+│       ├── common.proto
+│       └── health.proto
 ├── bin
 │   └── openk
 ├── cmd
@@ -108,6 +122,7 @@
 │   │   ├── middleware
 │   │   │   └── logging.go
 │   │   ├── config.go
+│   │   ├── grpc_server.go
 │   │   ├── routes.go
 │   │   └── server.go
 │   └── storage
@@ -115,6 +130,8 @@
 │       ├── memory_backend.go
 │       ├── mini_storage_backend.go
 │       └── storage_backend.go
+├── buf.gen.yaml
+├── buf.yaml
 ├── context-logging-design.md
 ├── context-logging-todos.md
 ├── go.mod
@@ -122,6 +139,8 @@
 ├── LICENSE
 ├── makefile
 ├── openk-auth-impl-plan.md
+├── openk-grpc-arch-overview.md
+├── openk-grpc-discussion.md
 ├── openk-grpc-impl-plan.md
 ├── openk-implementation-plan.md
 ├── openk-observability-draft.md
@@ -129,4 +148,4 @@
 ├── README.md
 └── repo_dir.txt
 
-27 directories, 103 files
+35 directories, 114 files
