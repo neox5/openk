@@ -16,8 +16,7 @@
 │   │   ├── 008_personal_vault_management.md
 │   │   ├── 009_key_derivation_architecture.md
 │   │   ├── 010_http_error_handling_standard.md
-│   │   ├── 011_package_structure.md
-│   │   ├── 012_logging_architecture.md
+│   │   ├── 011_logging_architecture.md
 │   │   └── _ADR-GUIDE.md
 │   ├── misc
 │   │   └── openk-banner.md
@@ -129,11 +128,9 @@
 │   │   │   └── v1
 │   │   │       └── common_v1.proto
 │   │   └── health
-│   │       ├── v1
-│   │       │   └── health_v1.proto
-│   │       └── v2
-│   │           ├── health_service_v2.proto
-│   │           └── health_v2.proto
+│   │       └── v1
+│   │           ├── health_service_v1.proto
+│   │           └── health_v1.proto
 │   ├── vendor
 │   │   └── google
 │   │       └── protobuf
@@ -159,4 +156,4 @@
 ├── README.md
 └── repo_dir.txt
 
-44 directories, 116 files
+43 directories, 114 files

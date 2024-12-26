@@ -8,6 +8,7 @@ import (
 
 	"github.com/neox5/openk/internal/logging"
 	"github.com/neox5/openk/internal/opene"
+	"github.com/neox5/openk/internal/server/services/health"
 	"google.golang.org/grpc"
 )
 
@@ -17,6 +18,9 @@ type GRPCServer struct {
 	logger   *slog.Logger
 	server   *grpc.Server
 	listener net.Listener
+
+	// Services
+	healthServer *health.HealthServerV1
 }
 
 // NewGRPCServer creates a new gRPC server instance
@@ -71,14 +75,40 @@ func NewGRPCServer(ctx context.Context, cfg *Config, logger *slog.Logger, opts .
 	}
 
 	// Create server
-	server := grpc.NewServer(serverOpts...)
+	grpcServer := grpc.NewServer(serverOpts...)
 
-	return &GRPCServer{
+	// Create server instance
+	s := &GRPCServer{
 		config:   cfg,
 		logger:   logger,
-		server:   server,
+		server:   grpcServer,
 		listener: listener,
-	}, nil
+	}
+
+	// Register services
+	if err := s.registerServices(ctx); err != nil {
+		listener.Close()
+		return nil, err
+	}
+
+	return s, nil
+}
+
+// registerServices registers all gRPC services
+func (s *GRPCServer) registerServices(ctx context.Context) error {
+	// Register health service
+	healthServer, err := health.RegisterHealthServers(s.server, s.logger)
+	if err != nil {
+		return opene.NewInternalError("server", "register_services", "failed to register health service").
+			Wrap(opene.AsError(err, "grpc", opene.CodeInternal))
+	}
+	s.healthServer = healthServer
+
+	s.logger.LogAttrs(ctx, slog.LevelInfo, "registered gRPC services",
+		slog.Bool("health_service", true),
+	)
+
+	return nil
 }
 
 // Start begins serving gRPC requests
@@ -121,3 +151,4 @@ func (s *GRPCServer) Stop(ctx context.Context) error {
 		return nil
 	}
 }
+
