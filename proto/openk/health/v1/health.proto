@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package openk.health.v1;
+option go_package = "github.com/neox5/openk/internal/api_gen/openk/health/v1;healthv1";
+
+import "google/protobuf/timestamp.proto";
+
+message HealthCheck {
+  string status = 1;
+  google.protobuf.Timestamp timestamp = 2;
+}

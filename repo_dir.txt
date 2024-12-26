@@ -1,18 +1,4 @@
 .
-├── api
-│   └── v1
-│       ├── gen
-│       │   ├── api
-│       │   │   └── v1
-│       │   │       ├── common.pb.go
-│       │   │       ├── health_grpc.pb.go
-│       │   │       └── health.pb.go
-│       │   ├── common
-│       │   ├── health
-│       │   └── openapiv2
-│       │       └── api.swagger.json
-│       ├── common.proto
-│       └── health.proto
 ├── bin
 │   └── openk
 ├── cmd
@@ -41,11 +27,21 @@
 │   │   └── crypto-core_spec.md
 │   ├── acid_storage_backend_design.md
 │   ├── CODE_STYLE.md
+│   ├── GRPC_GUIDE.md
 │   ├── PACKAGE_STRUCTURE.md
 │   ├── project_description.md
 │   ├── shared-vision.md
 │   └── TESTING_GUIDE.md
 ├── internal
+│   ├── api_gen
+│   │   └── openk
+│   │       └── health
+│   │           ├── v1
+│   │           │   └── health.pb.go
+│   │           └── v2
+│   │               ├── health.pb.go
+│   │               ├── service_grpc.pb.go
+│   │               └── service.pb.go
 │   ├── app
 │   │   ├── client
 │   │   │   ├── login.go
@@ -130,8 +126,23 @@
 │       ├── memory_backend.go
 │       ├── mini_storage_backend.go
 │       └── storage_backend.go
-├── buf.gen.yaml
-├── buf.yaml
+├── proto
+│   ├── openk
+│   │   └── health
+│   │       ├── v1
+│   │       │   └── health.proto
+│   │       └── v2
+│   │           ├── health.proto
+│   │           └── service.proto
+│   ├── vendor
+│   │   └── google
+│   │       └── protobuf
+│   │           ├── empty.proto
+│   │           └── timestamp.proto
+│   ├── buf.gen.yaml
+│   ├── buf_gen_yaml_file.go
+│   ├── buf.yaml
+│   └── buf_yaml_file.go
 ├── context-logging-design.md
 ├── context-logging-todos.md
 ├── go.mod
@@ -148,4 +159,4 @@
 ├── README.md
 └── repo_dir.txt
 
-35 directories, 114 files
+40 directories, 120 files

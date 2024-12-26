@@ -2,7 +2,7 @@
 /bin/
 
 # Generated code
-/api/v1/gen/
+/internal/api_gen/
 
 # Go specific
 *.test

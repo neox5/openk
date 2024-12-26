@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package api.v1;
+package openk.common.v1;
 
-option go_package = "github.com/neox5/openk/api/v1/gen";
+option go_package = "github.com/neox5/openk/internal/api_gen/openk/common/v1;commonv1";
 
 import "google/protobuf/timestamp.proto";
 
@@ -32,7 +32,7 @@ message Metadata {
   map<string, string> fields = 1;
 }
 
-// Range represents a time range with start and end
+// TimeRange represents a time range with start and end
 message TimeRange {
   google.protobuf.Timestamp start = 1;
   google.protobuf.Timestamp end = 2;

@@ -1,0 +1,14 @@
+version: v2
+modules:
+  - path: .
+    name: buf.build/neox5/openk
+    excludes:
+      - vendor/google/protobuf
+lint:
+  use:
+    - DEFAULT
+  except:
+    - PACKAGE_VERSION_SUFFIX
+breaking:
+  use:
+    - FILE
