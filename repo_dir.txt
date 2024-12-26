@@ -35,12 +35,10 @@
 │   │       │   └── v1
 │   │       │       └── common_v1.pb.go
 │   │       └── health
-│   │           ├── v1
-│   │           │   └── health_v1.pb.go
-│   │           └── v2
-│   │               ├── health_service_v2_grpc.pb.go
-│   │               ├── health_service_v2.pb.go
-│   │               └── health_v2.pb.go
+│   │           └── v1
+│   │               ├── health_service_v1_grpc.pb.go
+│   │               ├── health_service_v1.pb.go
+│   │               └── health_v1.pb.go
 │   ├── app
 │   │   ├── client
 │   │   │   ├── login.go
@@ -114,6 +112,12 @@
 │   │   ├── interceptors
 │   │   │   ├── logging.go
 │   │   │   └── logging_test.go
+│   │   ├── services
+│   │   │   └── health
+│   │   │       ├── health_register.go
+│   │   │       ├── health_register_test.go
+│   │   │       ├── health_server_v1.go
+│   │   │       └── health_server_v1_test.go
 │   │   ├── config.go
 │   │   ├── grpc_options.go
 │   │   └── grpc_server.go
@@ -156,4 +160,4 @@
 ├── README.md
 └── repo_dir.txt
 
-43 directories, 114 files
+44 directories, 117 files
