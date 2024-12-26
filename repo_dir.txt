@@ -1,4 +1,4 @@
-.
+../openk
 ├── bin
 │   └── openk
 ├── cmd
@@ -26,11 +26,9 @@
 │   ├── specs
 │   │   └── crypto-core_spec.md
 │   ├── acid_storage_backend_design.md
-│   ├── CODE_STYLE.md
-│   ├── GRPC_GUIDE.md
+│   ├── DEVELOPMENT.md
 │   ├── project_description.md
-│   ├── shared-vision.md
-│   └── TESTING_GUIDE.md
+│   └── shared-vision.md
 ├── internal
 │   ├── api_gen
 │   │   └── openk
@@ -51,8 +49,8 @@
 │   │   ├── context.go
 │   │   └── server.go
 │   ├── buildinfo
-│   │   ├── info.go
-│   │   └── info_test.go
+│   │   ├── buildinfo.go
+│   │   └── buildinfo_test.go
 │   ├── cli
 │   │   ├── auth
 │   │   │   ├── command.go
@@ -81,9 +79,9 @@
 │   │   ├── secure_wipe.go
 │   │   └── secure_wipe_test.go
 │   ├── ctx
-│   │   ├── context.go
-│   │   ├── context_test.go
-│   │   └── key.go
+│   │   ├── ctx.go
+│   │   ├── ctx_key.go
+│   │   └── ctx_test.go
 │   ├── kms
 │   │   ├── dek.go
 │   │   ├── dek_test.go
@@ -96,15 +94,15 @@
 │   │   └── master_key_test.go
 │   ├── logging
 │   │   ├── examples
-│   │   │   └── main.go
-│   │   ├── benchmark_test.go
-│   │   ├── error.go
+│   │   │   └── logger_example.go
+│   │   ├── log_error.go
+│   │   ├── logger_benchmark_test.go
 │   │   └── logger.go
 │   ├── opene
-│   │   ├── code.go
-│   │   ├── error.go
-│   │   ├── error_test.go
-│   │   ├── example_test.go
+│   │   ├── opene_code.go
+│   │   ├── opene_example_test.go
+│   │   ├── opene.go
+│   │   ├── opene_test.go
 │   │   ├── predefined.go
 │   │   ├── predefined_test.go
 │   │   ├── problem.go
@@ -159,4 +157,4 @@
 ├── README.md
 └── repo_dir.txt
 
-43 directories, 117 files
+43 directories, 115 files
