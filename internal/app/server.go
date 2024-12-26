@@ -10,7 +10,7 @@ import (
 
 func StartServer() error {
 	// Create fresh application context
-	ctx := NewContext()
+	ctx := NewAppContext()
 
 	info := buildinfo.Get()
 
