@@ -3,7 +3,7 @@
 │   └── openk
 ├── cmd
 │   └── openk
-│       └── main.go
+│       └── openk.go
 ├── docs
 │   ├── adr
 │   │   ├── 001_screte-field-format.md
@@ -46,20 +46,20 @@
 │   │   ├── client
 │   │   │   ├── login.go
 │   │   │   └── register.go
-│   │   ├── context.go
+│   │   ├── app_context.go
 │   │   └── server.go
 │   ├── buildinfo
 │   │   ├── buildinfo.go
 │   │   └── buildinfo_test.go
 │   ├── cli
 │   │   ├── auth
-│   │   │   ├── command.go
-│   │   │   ├── input.go
-│   │   │   ├── login.go
-│   │   │   └── register.go
+│   │   │   ├── auth_command.go
+│   │   │   ├── auth_input.go
+│   │   │   ├── auth_login.go
+│   │   │   └── auth_register.go
 │   │   ├── server
-│   │   │   ├── command.go
-│   │   │   └── start.go
+│   │   │   ├── server_command.go
+│   │   │   └── server_start.go
 │   │   └── cli.go
 │   ├── crypto
 │   │   ├── aes_gcm.go

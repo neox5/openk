@@ -10,35 +10,54 @@
 
 ```
 .
-├── proto/                      # Proto definitions
-│   ├── buf.yaml               # Buf configuration
-│   ├── buf.gen.yaml           # Code generation config
-│   ├── openk/                 # API namespace
-│   │   └── <service>/        # Service directories
-│   │       ├── v1/           # Version directories
-│   │       │   ├── service.proto  # Service definitions
-│   │       │   └── types.proto    # Type definitions
-│   │       └── v2/
-│   └── vendor/               # Vendored dependencies
-│       └── google/
-│           └── protobuf/
-├── internal/
-│   ├── api_gen/             # Generated code
-│   │   └── openk/
-│   │       └── <service>/
-│   │           └── v{n}/
-│   └── server/              # Server implementation
-│       ├── grpc_server.go   # gRPC server setup
-│       ├── gateway.go       # REST gateway
-│       ├── interceptors/    # gRPC interceptors
-│       ├── services/        # Service implementations
-│       └── health/          # Health checks
 ├── cmd/                     # Command line applications
 │   └── openk/
 │       └── main.go
-└── docs/                    # Documentation
-    ├── adr/                # Architecture Decision Records
-    └── specs/              # Technical specifications
+├── docs/                    # Documentation
+│   ├── adr/                # Architecture Decision Records
+│   ├── misc/               # Miscellaneous documentation
+│   ├── models/             # Data model documentation
+│   └── specs/              # Technical specifications
+├── internal/               # Internal packages
+│   ├── api_gen/           # Generated code
+│   │   └── openk/         # Generated API code
+│   │       ├── common/    # Common types
+│   │       │   └── v1/
+│   │       └── health/    # Health service
+│   │           ├── v1/    
+│   │           └── v2/
+│   ├── app/               # Application core
+│   │   ├── client/       # Client implementations
+│   │   └── server/       # Server core
+│   ├── buildinfo/         # Build information
+│   ├── cli/              # CLI implementation
+│   ├── crypto/           # Cryptographic operations
+│   ├── ctx/              # Context utilities
+│   ├── kms/              # Key management
+│   ├── logging/          # Logging utilities
+│   ├── opene/            # Error handling
+│   ├── secret/           # Secret management
+│   ├── server/           # Server implementation
+│   │   ├── interceptors/ # gRPC interceptors
+│   │   └── services/    # Service implementations
+│   └── storage/          # Storage implementations
+├── proto/                 # Proto definitions
+│   ├── openk/            # API namespace
+│   │   ├── common/       # Common definitions
+│   │   │   └── v1/
+│   │   │       └── common_v1.proto    # Common types
+│   │   └── health/       # Health service
+│   │       ├── v1/
+│   │       │   └── health_v1.proto    # V1 types
+│   │       └── v2/
+│   │           ├── health_v2.proto          # V2 types
+│   │           └── health_service_v2.proto  # V2 service
+│   ├── vendor/           # Vendored proto dependencies
+│   │   └── google/
+│   │       └── protobuf/
+│   ├── buf.yaml          # Buf configuration
+│   └── buf.gen.yaml      # Code generation config
+└── scripts/              # Build and maintenance scripts
 ```
 
 ## Code Style Guide
@@ -152,6 +171,69 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 ## gRPC Development
 
+### Proto File Organization
+```
+proto/
+├── openk/                 # API namespace
+│   ├── common/           # Common definitions
+│   │   └── v1/
+│   │       └── common_v1.proto       # Common types
+│   └── health/           # Health service
+│       ├── v1/
+│       │   └── health_v1.proto       # V1 types
+│       └── v2/
+│           ├── health_v2.proto       # V2 types
+│           └── health_service_v2.proto # V2 service
+```
+
+### Proto File Naming Conventions
+- Service definition files: `<service>_service_v<n>.proto`
+  Example: `health_service_v2.proto`
+- Type definition files: `<service>_v<n>.proto`
+  Example: `health_v2.proto`
+- Common type files: `common_v<n>.proto`
+  Example: `common_v1.proto`
+
+### Proto File Structure
+Each service version should have:
+1. Type definitions in `<service>_v<n>.proto`
+2. Service definitions in `<service>_service_v<n>.proto`
+
+Example for health service v2:
+```protobuf
+// health_v2.proto - Type definitions
+syntax = "proto3";
+package openk.health.v2;
+option go_package = "github.com/neox5/openk/internal/api_gen/openk/health/v2;healthv2";
+
+message CheckRequest {
+  // fields...
+}
+
+// health_service_v2.proto - Service definition
+syntax = "proto3";
+package openk.health.v2;
+option go_package = "github.com/neox5/openk/internal/api_gen/openk/health/v2;healthv2";
+
+import "openk/health/v2/health_v2.proto";
+
+service HealthService {
+  rpc Check(CheckRequest) returns (CheckResponse);
+}
+```
+
+### Package Naming
+- Format: `openk.<service>.<version>`
+- Example: `openk.health.v2`
+- Never reuse package names across different protofiles
+- Always include version in package name
+
+### Go Package Naming
+- Format: `github.com/neox5/openk/internal/api_gen/openk/<service>/<version>;<service><version>`
+- Example: `github.com/neox5/openk/internal/api_gen/openk/health/v2;healthv2`
+- Import path matches generated code location
+- Short package names for clean imports
+
 ### Buf Configuration
 
 #### buf.yaml
@@ -207,18 +289,6 @@ Key settings:
 - `managed`: Enables consistent package naming
 - `plugins`: Configures Go and gRPC code generation
 - `out`: Places generated code in internal/api_gen
-
-### Package Naming
-- Format: `openk.<service>.<version>`
-- Example: `openk.health.v1`
-- Never reuse package names across different protofiles
-- Always include version in package name
-
-### Go Package Naming
-- Format: `github.com/neox5/openk/internal/api_gen/openk/<service>/<version>;<service><version>`
-- Example: `github.com/neox5/openk/internal/api_gen/openk/health/v1;healthv1`
-- Import path matches generated code location
-- Short package names for clean imports
 
 ## Testing Guide
 

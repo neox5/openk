@@ -41,6 +41,7 @@ echo "Starting flatification..."
 # Link specific files from docs/
 link_file "$SOURCE_DIR/docs/project_description.md"
 link_file "$SOURCE_DIR/docs/shared-vision.md"
+link_file "$SOURCE_DIR/docs/DEVELOPMENT.md"
 for file in "$SOURCE_DIR/docs/adr/"* "$SOURCE_DIR/docs/specs/"* "$SOURCE_DIR/docs/models/"*; do
   link_file "$file"
 done
