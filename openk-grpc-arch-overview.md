@@ -1,18 +1,46 @@
 # OpenK gRPC Architecture Overview
 
-## Introduction
-This document outlines the high-level architecture for OpenK's gRPC implementation, focusing on core patterns, best practices, and integration with existing components.
+## Directory Organization
+
+### API Layer
+```
+proto/                      # Proto definitions
+├── buf.yaml               # Buf configuration
+├── buf.gen.yaml           # Code generation config
+├── openk/                 # API namespace
+│   └── <service>/        # Service directories
+│       ├── v1/           # Version directories
+│       │   ├── service.proto  # Service definitions
+│       │   └── types.proto    # Type definitions
+│       └── v2/
+└── vendor/               # Vendored dependencies
+    └── google/
+        └── protobuf/
+
+internal/
+├── api_gen/             # Generated code
+│   └── openk/
+│       └── <service>/
+│           └── v{n}/
+└── server/              # Server implementation
+    ├── grpc_server.go   # gRPC server setup
+    ├── gateway.go       # REST gateway
+    ├── interceptors/    # gRPC interceptors
+    ├── services/       # Service implementations
+    └── health/         # Health checks
+```
 
 ## Core Architecture Components
 
 ### 1. Service Organization
-- Clear separation between API definition (proto) and implementation
-- Versioned APIs with backward compatibility
-- Service implementations follow domain boundaries
-- Reuse of core domain logic between HTTP and gRPC
+- Proto definitions in `proto/openk/<service>/v{n}/`
+- Generated code in `internal/api_gen/openk/<service>/v{n}/`
+- Service implementations in `internal/server/services/`
+- Clear separation between API and implementation
+- Core logic reuse between HTTP and gRPC
 
 ### 2. Middleware Architecture
-Implemented through gRPC interceptors:
+Implemented through interceptors in `internal/server/interceptors/`:
 - Authentication & Authorization
 - Logging & Tracing
 - Error Translation
@@ -32,48 +60,33 @@ Implemented through gRPC interceptors:
 - Support for both human and machine identities
 - TLS for transport security
 
-## REST Gateway Integration
+## Gateway Integration
 
 ### 1. Overview
-gRPC-Gateway provides REST API access to gRPC services by:
-- Generating REST endpoints from proto definitions
-- Translating HTTP/REST to gRPC calls
-- Providing OpenAPI/Swagger documentation
-- Managing content type negotiation
-- Handling request/response validation
+Gateway integration (`internal/server/gateway.go`) provides:
+- REST API access to gRPC services
+- OpenAPI/Swagger documentation
+- Content type negotiation
+- Request/response validation
 
 ### 2. Integration Strategy
 Initially deployed as part of the main service:
 ```
-┌────────── OpenK Service ──────────┐
-│                                   │
-│   ┌─────────┐      ┌─────────┐   │
-│   │  REST   │ ---> │  gRPC   │   │
-│   │ Gateway │      │ Server  │   │
-│   └─────────┘      └─────────┘   │
-│                                   │
-└───────────────────────────────────┘
+┌────────── Internal Server ──────────┐
+│                                    │
+│   ┌─────────┐       ┌─────────┐    │
+│   │ gateway │ ───── │  grpc   │    │
+│   │  .go    │       │ server  │    │
+│   └─────────┘       └─────────┘    │
+│                                    │
+└────────────────────────────────────┘
 ```
-
-Benefits of integrated deployment:
-- Simplified operations
-- Unified logging and monitoring
-- Shared configuration
-- Direct server access
-- Single deployment unit
-
-Future considerations for separate deployment:
-- Independent scaling needs
-- Client proximity requirements
-- Load pattern differences
-- Deployment flexibility
 
 ### 3. Request Flow
-Example trace propagation:
 ```
-Web Client -> HTTP Request -> Gateway -> gRPC Request -> gRPC Server
-     |            |             |            |             |
-     └─────────────────── Same Trace ID ──────────────────┘
+Client Request → Gateway → gRPC Server → Service Implementation
+     │             │           │                │
+     └─────────── Trace ID Propagation ────────┘
 ```
 
 ## Service Patterns
@@ -97,32 +110,24 @@ Client → Interceptors → Service Implementation → Domain Logic → Storage
 - Graceful shutdown handling
 - Health checking and service discovery
 
-## Implementation Strategy
+## Implementation Guidelines
 
 ### 1. Proto Organization
-```
-api/
-└── v1/
-    ├── health.proto     # Health checks
-    ├── common.proto     # Shared definitions
-    ├── service1.proto   # Domain services
-    └── service2.proto
-```
+All protos in `proto/openk/<service>/v{n}/`:
+- `service.proto`: Service definitions
+- `types.proto`: Data structures
+- Clear versioning
+- Shared types in common
 
 ### 2. Service Structure
-```
-internal/
-├── server/
-    ├── grpc_server.go    # gRPC server setup
-    ├── gateway.go        # REST gateway
-    ├── interceptors/     # gRPC interceptors
-    ├── services/        # Service implementations
-    └── health/          # Health checks
-└── domain/             # Core business logic
-```
+Each service in `internal/server/services/<service>`:
+- Clear interface definition
+- Separation from transport
+- Reusable business logic
+- Proper error handling
 
 ### 3. Error Handling
-- Consistent error mapping between domain and gRPC
+- Consistent error mapping
 - Structured error details
 - Clear error categorization
 - Proper error propagation
@@ -134,49 +139,12 @@ internal/
 - Error rates and types
 - Connection pool status
 - Resource utilization
-- Custom business metrics
 
 ### 2. Debug Capabilities
 - gRPC reflection support
 - Clear logging patterns
 - Trace correlation
 - Error context preservation
-
-### 3. Performance
-- Connection management
-- Message size limits
-- Streaming thresholds
-- Resource constraints
-
-## Integration Points
-
-### 1. Existing Components
-- Authentication system
-- Key management
-- Storage backends
-- Event system
-- Logging infrastructure
-
-### 2. Client Support
-- Official client libraries
-- Authentication flows
-- Error handling
-- Connection management
-- Retry strategies
-
-## Future Considerations
-
-### 1. Extensibility
-- New service addition
-- Version upgrades
-- Protocol evolution
-- Feature flagging
-
-### 2. Scalability
-- Load balancing
-- Service discovery
-- Caching strategies
-- Resource management
 
 ## Success Criteria
 

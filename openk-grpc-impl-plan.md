@@ -1,81 +1,77 @@
 # OpenK gRPC Implementation Plan
 
 ## Directory Structure
+
+### API Definitions
 ```
-api/                       # API definitions
-└── v1/                   # Version 1 API
-    ├── health.proto      # Health service definition
-    ├── common.proto      # Common types
-    └── gen/              # Generated code
-        ├── health/       # Generated health service
-        ├── common/       # Generated common types
-        └── openapiv2/    # Generated OpenAPI specs
+proto/                      # Proto definitions
+├── buf.yaml               
+├── buf.gen.yaml           
+├── openk/                 # API namespace
+│   └── <service>/        # Service directories
+│       ├── v1/           # Version directories
+│       │   ├── service.proto  # Service definitions
+│       │   └── types.proto    # Type definitions
+│       └── v2/
+└── vendor/               # Vendored dependencies
+    └── google/
+        └── protobuf/
 
 internal/
-├── server/
-│   ├── grpc/
-│   │   ├── server.go           # Core gRPC server setup
-│   │   ├── health/            
-│   │   │   └── service.go      # Health service implementation
-│   │   ├── interceptors/       # gRPC middleware
-│   │   │   ├── logging.go      # Logging interceptor
-│   │   │   ├── error.go        # Error handling interceptor
-│   │   │   └── metrics.go      # Metrics collection
-│   │   └── gateway/           # Optional REST gateway
-│   │       └── server.go      # REST gateway setup
-│   └── service/               # Core business logic
-│       └── health/
-│           └── service.go     # Health check logic implementation
+├── api_gen/             # Generated code
+│   └── openk/
+│       └── <service>/
+│           └── v{n}/
+└── server/              # Server implementation
+    ├── grpc_server.go   # gRPC server setup
+    ├── gateway.go       # REST gateway
+    ├── interceptors/    # gRPC interceptors
+    │   ├── logging.go   # Logging interceptor
+    │   ├── error.go     # Error handling interceptor
+    │   └── metrics.go   # Metrics collection
+    ├── services/       # Service implementations
+    │   └── health/     # Health service
+    └── health/         # Health checks
 ```
 
 ## Implementation Steps
 
-### 1. Proto Definition ✓
-- [x] Define health service proto in api/v1/health.proto
-- [x] Add common types in api/v1/common.proto
+### 1. Proto Setup ✓
+- [x] Define health service proto in proto/openk/health/v1/
+- [x] Add common types in proto/openk/common/v1/
 - [x] Set up buf for proto management
 - [x] Configure protoc generation
 - [x] Add required tools documentation
 - [x] Configure .gitignore for generated code
 
-### 2. gRPC Server Design
-Key decisions to be made:
+### 2. Server Implementation
+- [ ] Refactor existing grpc_server.go for new structure
+- [ ] Implement interceptor chain
+- [ ] Configure TLS and security
+- [ ] Set up health service
+- [ ] Add connection handling
 
-#### 2.1 Core Server Implementation
-- [ ] Define server lifecycle management (start, stop, graceful shutdown)
-- [ ] Configure TLS and security settings
-- [ ] Set up connection handling and pooling
-- [ ] Implement health check service
+### 3. Interceptors
+Key interceptors to implement:
+- [ ] Logging (request/response logging)
+- [ ] Error handling (domain → gRPC errors)
+- [ ] Recovery (panic handling)
+- [ ] Metrics (prometheus metrics)
+- [ ] Authentication (token validation)
 
-#### 2.2 Middleware Architecture
-- [ ] Design interceptor chain setup
-- [ ] Adapt existing logging framework for gRPC context
-- [ ] Implement error translation interceptor (RFC 7807 → gRPC)
-- [ ] Add metrics collection points
+### 4. Service Layer
+- [ ] Health service implementation
+- [ ] Service interface definition
+- [ ] Health check logic
+- [ ] Service registration
+- [ ] Integration tests
 
-#### 2.3 Business Logic Integration 
-- [ ] Design service layer interface
-- [ ] Define dependency injection pattern
-- [ ] Plan transaction handling
-- [ ] Structure state management
-
-#### 2.4 REST Gateway (Optional Phase)
-- [ ] Gateway server configuration
-- [ ] Error translation (gRPC → HTTP)
-- [ ] CORS setup
+### 5. Gateway Layer
+- [ ] Basic gateway setup
+- [ ] Error translation
+- [ ] CORS configuration
 - [ ] OpenAPI generation
-
-### 3. Standards Adaptation
-- [ ] Document required changes to existing standards
-- [ ] Adapt logging architecture for gRPC
-- [ ] Extend error handling for gRPC context
-- [ ] Update context propagation
-
-### 4. Testing Strategy
-- [ ] Define unit testing approach for gRPC services
-- [ ] Plan integration testing setup
-- [ ] Create necessary test helpers
-- [ ] Document gRPC-specific testing patterns
+- [ ] Health endpoint exposure
 
 ## Success Criteria
 
@@ -99,6 +95,7 @@ Key decisions to be made:
 - Error rate monitoring
 
 ## Next Steps
-1. Finalize server structure decisions
-2. Implement core gRPC server setup
-3. Create first service implementation (Health)
+1. Implement interceptors framework
+2. Create health service implementation
+3. Add service registration to server
+4. Implement gateway setup
