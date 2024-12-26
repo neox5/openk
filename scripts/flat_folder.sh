@@ -71,6 +71,17 @@ find "$SOURCE_DIR/proto/openk" -type f -name '*.proto' | while read -r file; do
   link_file "$file"
 done
 
+# Link all cli files
+link_file "$SOURCE_DIR/cmd/openk/openk.go"
+link_file "$SOURCE_DIR/internal/cli/cli.go"
+link_file "$SOURCE_DIR/internal/app/app_context.go"
+link_file "$SOURCE_DIR/internal/app/server.go"
+for file in "$SOURCE_DIR/internal/app/client/"* "$SOURCE_DIR/internal/cli/auth/"* "$SOURCE_DIR/internal/cli/server/"*; do
+  [[ $file == *_test.go ]] && continue
+  link_file "$file"
+done
+
+
 # Link openk/makefile
 link_file "$SOURCE_DIR/makefile"
 
