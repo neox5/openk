@@ -20,7 +20,7 @@ type GRPCServer struct {
 }
 
 // NewGRPCServer creates a new gRPC server instance
-func NewGRPCServer(ctx context.Context, cfg *Config, logger *slog.Logger) (*GRPCServer, error) {
+func NewGRPCServer(ctx context.Context, cfg *Config, logger *slog.Logger, opts ...ServerOption) (*GRPCServer, error) {
 	if cfg == nil {
 		cfg = DefaultConfig()
 	}
@@ -45,14 +45,33 @@ func NewGRPCServer(ctx context.Context, cfg *Config, logger *slog.Logger) (*GRPC
 			Wrap(opene.AsError(err, "net", opene.CodeInternal))
 	}
 
+	// Process options
+	options := defaultServerOptions()
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	// Apply config-based keepalive settings
+	options.keepaliveParams.MaxConnectionAge = cfg.MaxConnectionAge
+	options.keepaliveParams.MaxConnectionIdle = cfg.MaxConnectionIdle
+	options.keepalivePolicy.MinTime = cfg.MinConnectionTime
+	options.keepalivePolicy.PermitWithoutStream = cfg.PermitWithoutStream
+
 	// Create server options
-	opts := []grpc.ServerOption{
-		// TODO: Add interceptors
-		// TODO: Add TLS configuration
+	serverOpts := []grpc.ServerOption{
+		grpc.KeepaliveParams(options.keepaliveParams),
+		grpc.KeepaliveEnforcementPolicy(options.keepalivePolicy),
+	}
+
+	if len(options.unaryInterceptors) > 0 {
+		serverOpts = append(serverOpts, grpc.ChainUnaryInterceptor(options.unaryInterceptors...))
+	}
+	if len(options.streamInterceptors) > 0 {
+		serverOpts = append(serverOpts, grpc.ChainStreamInterceptor(options.streamInterceptors...))
 	}
 
 	// Create server
-	server := grpc.NewServer(opts...)
+	server := grpc.NewServer(serverOpts...)
 
 	return &GRPCServer{
 		config:   cfg,
@@ -68,7 +87,6 @@ func (s *GRPCServer) Start() error {
 		slog.String("address", s.listener.Addr().String()),
 	)
 
-	// Start serving
 	if err := s.server.Serve(s.listener); err != nil {
 		return opene.NewInternalError("server", "start_grpc", "server startup failed").
 			WithMetadata(opene.Metadata{
@@ -81,11 +99,25 @@ func (s *GRPCServer) Start() error {
 }
 
 // Stop gracefully shuts down the server
-func (s *GRPCServer) Stop() error {
-	s.logger.LogAttrs(context.Background(), slog.LevelInfo, "stopping gRPC server",
+func (s *GRPCServer) Stop(ctx context.Context) error {
+	s.logger.LogAttrs(ctx, slog.LevelInfo, "stopping gRPC server",
 		slog.String("address", s.listener.Addr().String()),
 	)
 
-	s.server.GracefulStop()
-	return nil
+	stopped := make(chan struct{})
+	go func() {
+		s.server.GracefulStop()
+		close(stopped)
+	}()
+
+	select {
+	case <-ctx.Done():
+		s.server.Stop()
+		return opene.NewInternalError("server", "stop_grpc", "graceful shutdown timed out").
+			WithMetadata(opene.Metadata{
+				"address": s.listener.Addr().String(),
+			})
+	case <-stopped:
+		return nil
+	}
 }
