@@ -12,12 +12,8 @@ LDFLAGS=-ldflags "\
 	-X github.com/neox5/openk/internal/buildinfo.BuildUser=${BUILD_USER}"
 
 .PHONY: build
-build: generate
+build:
 	go build ${LDFLAGS} -o bin/openk ./cmd/openk
-
-.PHONY: install
-install: generate
-	go install ${LDFLAGS} ./cmd/server
 
 .PHONY: test
 test: generate

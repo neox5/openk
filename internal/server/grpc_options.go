@@ -1,63 +1,100 @@
 package server
 
 import (
+	"log/slog"
 	"time"
 
+	"github.com/neox5/openk/internal/server/interceptors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 )
 
-// ServerOption allows for customizing the gRPC server
-type ServerOption func(*serverOptions)
+// buildServerOptions combines all gRPC server options
+func buildServerOptions(cfg *Config, logger *slog.Logger) ([]grpc.ServerOption, error) {
+	opts := []grpc.ServerOption{}
 
-type serverOptions struct {
-	unaryInterceptors  []grpc.UnaryServerInterceptor
-	streamInterceptors []grpc.StreamServerInterceptor
-	keepaliveParams    keepalive.ServerParameters
-	keepalivePolicy    keepalive.EnforcementPolicy
+	// Add connection options
+	connectionOpts, err := buildConnectionOptions(cfg)
+	if err != nil {
+		return nil, err
+	}
+	opts = append(opts, connectionOpts...)
+
+	// Add interceptor options
+	interceptorOpts, err := buildInterceptorOptions(logger)
+	if err != nil {
+		return nil, err
+	}
+	opts = append(opts, interceptorOpts...)
+
+	// Add transport options
+	transportOpts, err := buildTransportOptions(cfg)
+	if err != nil {
+		return nil, err
+	}
+	opts = append(opts, transportOpts...)
+
+	return opts, nil
 }
 
-// defaultServerOptions returns the default server options
-func defaultServerOptions() *serverOptions {
-	return &serverOptions{
-		keepaliveParams: keepalive.ServerParameters{
-			MaxConnectionIdle:     15 * time.Minute,
-			MaxConnectionAge:      30 * time.Minute,
-			MaxConnectionAgeGrace: 5 * time.Second,
-			Time:                  5 * time.Second,
-			Timeout:              1 * time.Second,
-		},
-		keepalivePolicy: keepalive.EnforcementPolicy{
-			MinTime:             5 * time.Second,
-			PermitWithoutStream: true,
-		},
+// buildConnectionOptions configures how connections are managed
+func buildConnectionOptions(cfg *Config) ([]grpc.ServerOption, error) {
+	kaParams := keepalive.ServerParameters{
+		MaxConnectionIdle:     cfg.MaxConnectionIdle,
+		MaxConnectionAge:      cfg.MaxConnectionAge,
+		MaxConnectionAgeGrace: 5 * time.Second,
+		Time:                  5 * time.Second,
+		Timeout:               1 * time.Second,
 	}
+
+	kaPolicy := keepalive.EnforcementPolicy{
+		MinTime:             cfg.MinConnectionTime,
+		PermitWithoutStream: cfg.PermitWithoutStream,
+	}
+
+	return []grpc.ServerOption{
+		grpc.KeepaliveParams(kaParams),
+		grpc.KeepaliveEnforcementPolicy(kaPolicy),
+	}, nil
 }
 
-// WithUnaryInterceptors adds unary interceptors to the server
-func WithUnaryInterceptors(interceptors ...grpc.UnaryServerInterceptor) ServerOption {
-	return func(o *serverOptions) {
-		o.unaryInterceptors = append(o.unaryInterceptors, interceptors...)
+// buildInterceptorOptions configures server middleware
+func buildInterceptorOptions(logger *slog.Logger) ([]grpc.ServerOption, error) {
+	// Unary (request/response) interceptors
+	unaryInterceptors := []grpc.UnaryServerInterceptor{
+		interceptors.UnaryLogging(logger),
+		// Future interceptors:
+		// - Authentication
+		// - Request validation
+		// - Metrics collection
+		// - Panic recovery
+		// - Rate limiting
 	}
+
+	// Streaming interceptors
+	streamInterceptors := []grpc.StreamServerInterceptor{
+		interceptors.StreamLogging(logger),
+		// Future interceptors:
+		// - Authentication
+		// - Metrics collection
+		// - Panic recovery
+		// - Rate limiting
+	}
+
+	return []grpc.ServerOption{
+		grpc.ChainUnaryInterceptor(unaryInterceptors...),
+		grpc.ChainStreamInterceptor(streamInterceptors...),
+	}, nil
 }
 
-// WithStreamInterceptors adds stream interceptors to the server
-func WithStreamInterceptors(interceptors ...grpc.StreamServerInterceptor) ServerOption {
-	return func(o *serverOptions) {
-		o.streamInterceptors = append(o.streamInterceptors, interceptors...)
-	}
-}
+// buildTransportOptions configures transport-level settings
+func buildTransportOptions(cfg *Config) ([]grpc.ServerOption, error) {
+	opts := []grpc.ServerOption{}
 
-// WithKeepaliveParams customizes the keepalive parameters
-func WithKeepaliveParams(params keepalive.ServerParameters) ServerOption {
-	return func(o *serverOptions) {
-		o.keepaliveParams = params
-	}
-}
+	// Future transport options:
+	// - TLS configuration
+	// - Maximum message sizes
+	// - Compression settings
 
-// WithKeepalivePolicy customizes the keepalive enforcement policy
-func WithKeepalivePolicy(policy keepalive.EnforcementPolicy) ServerOption {
-	return func(o *serverOptions) {
-		o.keepalivePolicy = policy
-	}
+	return opts, nil
 }

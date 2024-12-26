@@ -1,13 +1,11 @@
 # OpenK gRPC Implementation Plan - Updated
 
-## Directory Structure
-
-### Current Structure ✓
+## Current Structure ✓
 ```
 internal/
 └── server/              
     ├── grpc_server.go   # Core server implementation ✓
-    ├── grpc_options.go  # Server options ✓
+    ├── grpc_options.go  # Consolidated server options ✓
     ├── config.go        # Server configuration ✓
     ├── interceptors/    
     │   ├── logging.go   # Logging interceptor ✓
@@ -17,36 +15,27 @@ internal/
             ├── health_server_v1.go  # V1 implementation ✓
             ├── health_server_v1_test.go  # V1 tests ✓
             └── health_register.go   # Version registration ✓
-
-proto/                   
-├── buf.yaml            # Buf configuration ✓
-├── buf.gen.yaml        # Code generation config ✓
-├── openk/              
-│   ├── common/         # Common types ✓
-│   │   └── v1/
-│   └── health/         # Health service ✓
-│       └── v1/         
-└── vendor/             # Vendored dependencies ✓
 ```
 
 ## Implementation Progress
 
 ### 1. Server Core ✓
 - [x] Basic gRPC server setup
-- [x] Server options pattern
-- [x] Configuration structure
+- [x] Clean option organization
+- [x] Centralized gRPC configuration
 - [x] Proper error handling
 - [x] Logging integration
 - [x] Connection management
 - [x] Graceful shutdown
 
-### 2. Proto Setup ✓
-- [x] Define health service proto
-- [x] Add common types
-- [x] Set up buf configuration
-- [x] Configure protoc generation
-- [x] Add tools documentation
-- [x] Configure .gitignore
+### 2. Server Options ✓
+- [x] Connection options (keepalive)
+- [x] Basic interceptors
+- [x] Transport placeholder
+- [ ] Expand transport options
+  - [ ] TLS configuration
+  - [ ] Message size limits
+  - [ ] Compression settings
 
 ### 3. Health Service ✓
 - [x] Interface definition
@@ -56,142 +45,145 @@ proto/
 - [x] Service documentation
 - [x] Example client usage
 
-### 4. Interceptors (Next Priority)
-- [x] Logging interceptor
-- [x] Logging interceptor tests
-- [ ] Recovery interceptor
-- [ ] Request validation interceptor
-- [ ] Context propagation interceptor
-- [ ] Metrics interceptor
+## Next Priority: Interceptors
 
-### 5. Testing Infrastructure (In Progress)
-- [x] Health service unit tests
-- [x] Health service integration tests
-- [ ] Server unit tests
-  - [ ] Configuration validation
-  - [ ] Options processing
-  - [ ] Lifecycle management
-- [ ] Integration test framework
-  - [ ] Test service definition
-  - [ ] Client test helpers
-  - [ ] Mock service implementation
-- [ ] Interceptor tests
-  - [ ] Chain ordering validation
-  - [ ] Error propagation
-  - [ ] Context handling
+### 1. Authentication Interceptor
+- [ ] Design auth token validation
+- [ ] Implement UnaryAuth interceptor
+- [ ] Implement StreamAuth interceptor
+- [ ] Add auth metadata extraction
+- [ ] Integration with auth service
+- [ ] Comprehensive tests
 
-### 6. Error Handling (Future)
-- [ ] Error code mapping
-- [ ] Status conversion helpers
-- [ ] Error pattern documentation
-- [ ] Example error scenarios
-- [ ] Testing error conditions
-
-### 7. Service Framework (Future)
-- [ ] Base service interface
-- [ ] Common service helpers
-- [ ] Service lifecycle management
-- [ ] Documentation and examples
-
-### 8. Gateway Layer (Future)
-- [ ] Basic gateway setup
+### 2. Recovery Interceptor
+- [ ] Design panic recovery approach
+- [ ] Implement UnaryRecovery interceptor
+- [ ] Implement StreamRecovery interceptor
 - [ ] Error translation
-- [ ] CORS configuration
-- [ ] OpenAPI generation
-- [ ] Health endpoint exposure
+- [ ] Recovery tests
+- [ ] Documentation
 
-## Next Steps (Priority Order)
+### 3. Validation Interceptor
+- [ ] Request validation design
+- [ ] Implement UnaryValidation interceptor
+- [ ] Implement StreamValidation interceptor
+- [ ] Integration with proto validation
+- [ ] Validation tests
+- [ ] Usage examples
 
-1. Complete Testing Infrastructure
-   - Add server unit tests
-   - Create integration test framework
-   - Document testing patterns
+### 4. Metrics Interceptor
+- [ ] Define key metrics
+- [ ] Implement UnaryMetrics interceptor
+- [ ] Implement StreamMetrics interceptor
+- [ ] Prometheus integration
+- [ ] Metrics tests
+- [ ] Documentation
 
-2. Implement Additional Interceptors
-   - Recovery interceptor
-   - Request validation
-   - Metrics collection
-   - Context propagation
+## Future Server Enhancements
 
-3. Error Handling
-   - Complete status code mapping
-   - Add conversion helpers
-   - Document error patterns
-   - Add error scenario tests
+### 1. Transport Security
+- [ ] TLS configuration
+- [ ] Certificate management
+- [ ] Mutual TLS support
+- [ ] Security tests
+- [ ] Security documentation
 
-## Success Criteria
+### 2. Performance Tuning
+- [ ] Message size configuration
+- [ ] Buffer tuning
+- [ ] Compression options
+- [ ] Performance tests
+- [ ] Tuning documentation
 
-### 1. Core Implementation
-- Complete test coverage
-- Clean separation of concerns
-- Proper error handling
-- Clear service patterns
-- Documentation coverage
-
-### 2. Code Quality
-- All tests passing
-- Error handling consistency
-- Proper logging
-- Clean code organization
-- Clear documentation
-
-### 3. Performance
-- Connection management
-- Resource cleanup
-- Error tracking
-- Basic monitoring
+### 3. Additional Services
+- [ ] Define next service priorities
+- [ ] Service template creation
+- [ ] Version management strategy
+- [ ] Service test patterns
+- [ ] Client generation
 
 ## Testing Requirements
 
 ### 1. Unit Tests
-- Configuration validation
-- Server lifecycle
-- Options processing
-- Error handling
-- Interceptor chains
+- [x] Server lifecycle
+- [x] Option building
+- [x] Health service
+- [ ] New interceptors
+- [ ] Configuration validation
 
 ### 2. Integration Tests
-- Server startup/shutdown
-- Service registration
-- Health checks
-- Error propagation
-- Interceptor functionality
+- [x] Server startup/shutdown
+- [x] Health service
+- [ ] Interceptor chains
+- [ ] Authentication flow
+- [ ] Error scenarios
 
 ### 3. Performance Tests
-- Connection handling
-- Memory usage
-- Request latency
-- Error conditions
+- [ ] Connection handling
+- [ ] Concurrent requests
+- [ ] Memory usage
+- [ ] Latency measurements
+- [ ] Resource monitoring
 
 ## Documentation Needs
-- Service implementation patterns
-- Error handling guidelines
-- Configuration options
-- Testing patterns
-- Client usage examples
 
-## Design Decisions Made
-1. Unified Server Implementation ✓
-   - Keep all server code in one file
-   - Makes service management clearer
-   - Easier to maintain and extend
-   - Better code navigation
+### 1. Architecture
+- [ ] Server design principles
+- [ ] Option organization
+- [ ] Interceptor patterns
+- [ ] Service patterns
 
-2. Service Organization ✓
-   - Separate package for each service
-   - Version-specific implementations
-   - Clear registration pattern
-   - Comprehensive testing
+### 2. Operations
+- [ ] Configuration guide
+- [ ] Security setup
+- [ ] Monitoring guide
+- [ ] Troubleshooting guide
 
-3. Interceptor Pattern ✓
-   - Chain-based approach
-   - Clear separation of concerns
-   - Consistent logging
-   - Error handling
+### 3. Development
+- [ ] Service implementation guide
+- [ ] Interceptor creation guide
+- [ ] Testing patterns
+- [ ] Client usage examples
 
-## Future Considerations
-- Additional interceptors
-- More service implementations
-- Metrics collection
-- Rate limiting
-- Client library
+## Success Criteria
+
+### 1. Functionality
+- Complete interceptor chain
+- Robust error handling
+- Proper security
+- Clean shutdown
+
+### 2. Performance
+- Acceptable latency
+- Resource efficiency
+- Connection stability
+- Proper timeout handling
+
+### 3. Maintainability
+- Clear documentation
+- Consistent patterns
+- Good test coverage
+- Easy to extend
+
+## Implementation Notes
+- Keep options organized and documented
+- Maintain clear error handling
+- Follow consistent patterns
+- Build for extensibility
+- Focus on security first
+
+## Immediate Next Steps
+1. Begin authentication interceptor
+   - Design token validation
+   - Plan metadata handling
+   - Security considerations
+
+2. Start recovery interceptor
+   - Design error translation
+   - Plan logging integration
+   - Consider monitoring needs
+
+3. Plan validation strategy
+   - Research proto validation
+   - Consider performance impact
+   - Design error responses

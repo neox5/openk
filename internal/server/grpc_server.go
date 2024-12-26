@@ -18,13 +18,10 @@ type GRPCServer struct {
 	logger   *slog.Logger
 	server   *grpc.Server
 	listener net.Listener
-
-	// Services
-	healthServer *health.HealthServerV1
 }
 
 // NewGRPCServer creates a new gRPC server instance
-func NewGRPCServer(ctx context.Context, cfg *Config, logger *slog.Logger, opts ...ServerOption) (*GRPCServer, error) {
+func NewGRPCServer(ctx context.Context, cfg *Config, logger *slog.Logger) (*GRPCServer, error) {
 	if cfg == nil {
 		cfg = DefaultConfig()
 	}
@@ -49,35 +46,15 @@ func NewGRPCServer(ctx context.Context, cfg *Config, logger *slog.Logger, opts .
 			Wrap(opene.AsError(err, "net", opene.CodeInternal))
 	}
 
-	// Process options
-	options := defaultServerOptions()
-	for _, opt := range opts {
-		opt(options)
+	// Build all server options
+	opts, err := buildServerOptions(cfg, logger)
+	if err != nil {
+		return nil, err
 	}
 
-	// Apply config-based keepalive settings
-	options.keepaliveParams.MaxConnectionAge = cfg.MaxConnectionAge
-	options.keepaliveParams.MaxConnectionIdle = cfg.MaxConnectionIdle
-	options.keepalivePolicy.MinTime = cfg.MinConnectionTime
-	options.keepalivePolicy.PermitWithoutStream = cfg.PermitWithoutStream
+	// Create server with options
+	grpcServer := grpc.NewServer(opts...)
 
-	// Create server options
-	serverOpts := []grpc.ServerOption{
-		grpc.KeepaliveParams(options.keepaliveParams),
-		grpc.KeepaliveEnforcementPolicy(options.keepalivePolicy),
-	}
-
-	if len(options.unaryInterceptors) > 0 {
-		serverOpts = append(serverOpts, grpc.ChainUnaryInterceptor(options.unaryInterceptors...))
-	}
-	if len(options.streamInterceptors) > 0 {
-		serverOpts = append(serverOpts, grpc.ChainStreamInterceptor(options.streamInterceptors...))
-	}
-
-	// Create server
-	grpcServer := grpc.NewServer(serverOpts...)
-
-	// Create server instance
 	s := &GRPCServer{
 		config:   cfg,
 		logger:   logger,
@@ -86,7 +63,7 @@ func NewGRPCServer(ctx context.Context, cfg *Config, logger *slog.Logger, opts .
 	}
 
 	// Register services
-	if err := s.registerServices(ctx); err != nil {
+	if err := registerServices(ctx, s.server, logger); err != nil {
 		listener.Close()
 		return nil, err
 	}
@@ -94,17 +71,16 @@ func NewGRPCServer(ctx context.Context, cfg *Config, logger *slog.Logger, opts .
 	return s, nil
 }
 
-// registerServices registers all gRPC services
-func (s *GRPCServer) registerServices(ctx context.Context) error {
+// registerServices configures and registers all gRPC services
+func registerServices(ctx context.Context, server *grpc.Server, logger *slog.Logger) error {
 	// Register health service
-	healthServer, err := health.RegisterHealthServers(s.server, s.logger)
+	_, err := health.RegisterHealthServers(server, logger)
 	if err != nil {
-		return opene.NewInternalError("server", "register_services", "failed to register health service").
+		return opene.NewInternalError("server", "register_health", "failed to register health service").
 			Wrap(opene.AsError(err, "grpc", opene.CodeInternal))
 	}
-	s.healthServer = healthServer
 
-	s.logger.LogAttrs(ctx, slog.LevelInfo, "registered gRPC services",
+	logger.LogAttrs(ctx, slog.LevelInfo, "registered gRPC services",
 		slog.Bool("health_service", true),
 	)
 
@@ -151,4 +127,3 @@ func (s *GRPCServer) Stop(ctx context.Context) error {
 		return nil
 	}
 }
-
