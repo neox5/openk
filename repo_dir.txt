@@ -28,13 +28,15 @@
 │   ├── acid_storage_backend_design.md
 │   ├── CODE_STYLE.md
 │   ├── GRPC_GUIDE.md
-│   ├── PACKAGE_STRUCTURE.md
 │   ├── project_description.md
 │   ├── shared-vision.md
 │   └── TESTING_GUIDE.md
 ├── internal
 │   ├── api_gen
 │   │   └── openk
+│   │       ├── common
+│   │       │   └── v1
+│   │       │       └── common.pb.go
 │   │       └── health
 │   │           ├── v1
 │   │           │   └── health.pb.go
@@ -112,15 +114,12 @@
 │   │   ├── mini_secret.go
 │   │   └── secret.go
 │   ├── server
-│   │   ├── health
-│   │   │   ├── handler.go
-│   │   │   └── response.go
-│   │   ├── middleware
-│   │   │   └── logging.go
+│   │   ├── interceptors
+│   │   │   ├── logging.go
+│   │   │   └── logging_test.go
 │   │   ├── config.go
-│   │   ├── grpc_server.go
-│   │   ├── routes.go
-│   │   └── server.go
+│   │   ├── grpc_options.go
+│   │   └── grpc_server.go
 │   └── storage
 │       ├── in_memory_mini_storage.go
 │       ├── memory_backend.go
@@ -128,6 +127,9 @@
 │       └── storage_backend.go
 ├── proto
 │   ├── openk
+│   │   ├── common
+│   │   │   └── v1
+│   │   │       └── common.proto
 │   │   └── health
 │   │       ├── v1
 │   │       │   └── health.proto
@@ -140,9 +142,7 @@
 │   │           ├── empty.proto
 │   │           └── timestamp.proto
 │   ├── buf.gen.yaml
-│   ├── buf_gen_yaml_file.go
-│   ├── buf.yaml
-│   └── buf_yaml_file.go
+│   └── buf.yaml
 ├── context-logging-design.md
 ├── context-logging-todos.md
 ├── go.mod
@@ -159,4 +159,4 @@
 ├── README.md
 └── repo_dir.txt
 
-40 directories, 120 files
+43 directories, 117 files
