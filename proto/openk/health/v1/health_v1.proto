@@ -1,11 +1,48 @@
 syntax = "proto3";
 
 package openk.health.v1;
+
 option go_package = "github.com/neox5/openk/internal/api_gen/openk/health/v1;healthv1";
 
 import "google/protobuf/timestamp.proto";
 
+// Status represents the health status of a component
+enum Status {
+  STATUS_UNSPECIFIED = 0;  // Default value, should not be used
+  STATUS_UP = 1;           // Component is healthy
+  STATUS_DOWN = 2;         // Component is unhealthy
+  STATUS_DEGRADED = 3;     // Component is functioning but impaired
+}
+
+// ComponentStatus represents the health status of an individual component
+message ComponentStatus {
+  // Name of the component (e.g., "database", "cache", "kms")
+  string name = 1;
+  
+  // Current health status
+  Status status = 2;
+  
+  // Optional description or error message
+  string message = 3;
+  
+  // When the component was last checked
+  google.protobuf.Timestamp last_check = 4;
+}
+
+// HealthCheck represents a complete system health status
 message HealthCheck {
-  string status = 1;
-  google.protobuf.Timestamp timestamp = 2;
+  // Overall system status
+  Status status = 1;
+  
+  // Server version information
+  string version = 2;
+  
+  // How long the server has been running
+  string uptime = 3;
+  
+  // When the health check was performed
+  google.protobuf.Timestamp timestamp = 4;
+  
+  // Status of individual components
+  repeated ComponentStatus components = 5;
 }

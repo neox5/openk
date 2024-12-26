@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package openk.health.v1;
+
+option go_package = "github.com/neox5/openk/internal/api_gen/openk/health/v1;healthv1";
+
+import "openk/health/v1/health_v1.proto";
+
+// HealthService provides health checking capabilities
+service HealthService {
+  // Check returns the current health status of the system
+  rpc Check(CheckRequest) returns (CheckResponse) {}
+  
+  // WatchHealth streams health updates
+  rpc WatchHealth(WatchHealthRequest) returns (stream HealthCheck) {}
+}
+
+// CheckRequest represents a request to check system health
+message CheckRequest {
+  // Optional components to check specifically
+  // If empty, all components are checked
+  repeated string components = 1;
+}
+
+// CheckResponse contains the health check results
+message CheckResponse {
+  // Complete health status
+  HealthCheck health = 1;
+}
+
+// WatchHealthRequest represents a request to watch health updates
+message WatchHealthRequest {
+  // Optional components to watch
+  // If empty, all components are watched
+  repeated string components = 1;
+  
+  // How frequently to send updates (in seconds)
+  // Server may adjust this to a supported value
+  uint32 update_interval_seconds = 2;
+}

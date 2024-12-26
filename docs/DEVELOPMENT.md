@@ -21,11 +21,11 @@
 ├── internal/               # Internal packages
 │   ├── api_gen/           # Generated code
 │   │   └── openk/         # Generated API code
-│   │       ├── common/    # Common types
+│   │       ├── common/    # Common proto types
 │   │       │   └── v1/
-│   │       └── health/    # Health service
+│   │       └── health/    # Health service protos
 │   │           ├── v1/    
-│   │           └── v2/
+│   │           └── v2/    
 │   ├── app/               # Application core
 │   │   ├── client/       # Client implementations
 │   │   └── server/       # Server core
@@ -37,24 +37,22 @@
 │   ├── logging/          # Logging utilities
 │   ├── opene/            # Error handling
 │   ├── secret/           # Secret management
-│   ├── server/           # Server implementation
-│   │   ├── interceptors/ # gRPC interceptors
-│   │   └── services/    # Service implementations
-│   └── storage/          # Storage implementations
+│   └── server/           # Server implementation
+│       ├── interceptors/ # gRPC interceptors
+│       └── services/     # Service implementations
+│           └── health/   # Health service
+│               ├── health_server_v1.go  # V1 implementation
+│               └── health_register.go   # Version registration
 ├── proto/                 # Proto definitions
 │   ├── openk/            # API namespace
 │   │   ├── common/       # Common definitions
 │   │   │   └── v1/
 │   │   │       └── common_v1.proto    # Common types
 │   │   └── health/       # Health service
-│   │       ├── v1/
-│   │       │   └── health_v1.proto    # V1 types
-│   │       └── v2/
-│   │           ├── health_v2.proto          # V2 types
-│   │           └── health_service_v2.proto  # V2 service
+│   │       └── v1/
+│   │           ├── health_v1.proto          # V1 types
+│   │           └── health_service_v1.proto  # V1 service
 │   ├── vendor/           # Vendored proto dependencies
-│   │   └── google/
-│   │       └── protobuf/
 │   ├── buf.yaml          # Buf configuration
 │   └── buf.gen.yaml      # Code generation config
 └── scripts/              # Build and maintenance scripts
@@ -171,124 +169,120 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 ## gRPC Development
 
-### Proto File Organization
+### Proto Organization
+
+#### Directory Structure
 ```
-proto/
-├── openk/                 # API namespace
-│   ├── common/           # Common definitions
-│   │   └── v1/
-│   │       └── common_v1.proto       # Common types
-│   └── health/           # Health service
-│       ├── v1/
-│       │   └── health_v1.proto       # V1 types
-│       └── v2/
-│           ├── health_v2.proto       # V2 types
-│           └── health_service_v2.proto # V2 service
+proto/openk/
+├── common/              # Shared types
+│   └── v1/
+│       └── common_v1.proto
+└── <service>/          # Service-specific protos
+    └── v1/
+        ├── <service>_v1.proto           # Service types
+        └── <service>_service_v1.proto   # Service definition
 ```
 
-### Proto File Naming Conventions
-- Service definition files: `<service>_service_v<n>.proto`
-  Example: `health_service_v2.proto`
-- Type definition files: `<service>_v<n>.proto`
-  Example: `health_v2.proto`
-- Common type files: `common_v<n>.proto`
-  Example: `common_v1.proto`
+#### Naming Conventions
+1. Proto Files:
+   - Types: `<service>_v1.proto` (e.g., `health_v1.proto`)
+   - Service: `<service>_service_v1.proto` (e.g., `health_service_v1.proto`)
+   - Common: `common_v1.proto`
 
-### Proto File Structure
-Each service version should have:
-1. Type definitions in `<service>_v<n>.proto`
-2. Service definitions in `<service>_service_v<n>.proto`
+2. Service Implementation:
+   - Server: `<service>_server_v1.go` (e.g., `health_server_v1.go`)
+   - Registration: `<service>_register.go` (e.g., `health_register.go`)
 
-Example for health service v2:
-```protobuf
-// health_v2.proto - Type definitions
-syntax = "proto3";
-package openk.health.v2;
-option go_package = "github.com/neox5/openk/internal/api_gen/openk/health/v2;healthv2";
+### Server Implementation Pattern
 
-message CheckRequest {
-  // fields...
+#### File Structure
+```go
+// health_server_v1.go
+type HealthServerV1 struct {
+    healthv1.UnimplementedHealthServiceServer
+    // Server implementation
 }
 
-// health_service_v2.proto - Service definition
-syntax = "proto3";
-package openk.health.v2;
-option go_package = "github.com/neox5/openk/internal/api_gen/openk/health/v2;healthv2";
-
-import "openk/health/v2/health_v2.proto";
-
-service HealthService {
-  rpc Check(CheckRequest) returns (CheckResponse);
+// health_register.go
+func RegisterHealthServers(srv *grpc.Server, logger *slog.Logger) (*HealthServerV1, error) {
+    // Registration of all versions
 }
 ```
 
-### Package Naming
-- Format: `openk.<service>.<version>`
-- Example: `openk.health.v2`
-- Never reuse package names across different protofiles
-- Always include version in package name
+#### Version Management
+- Each version has its own server implementation (`*_server_v1.go`)
+- Single registration point for all versions (`*_register.go`)
+- Clear version suffixes in type names (e.g., `HealthServerV1`)
+- Version-specific types include version in name (e.g., `ComponentCheckV1`)
 
-### Go Package Naming
-- Format: `github.com/neox5/openk/internal/api_gen/openk/<service>/<version>;<service><version>`
-- Example: `github.com/neox5/openk/internal/api_gen/openk/health/v2;healthv2`
-- Import path matches generated code location
-- Short package names for clean imports
+### Proto Best Practices
 
-### Buf Configuration
+1. Package Naming:
+   ```protobuf
+   package openk.<service>.v1;
+   option go_package = "github.com/neox5/openk/internal/api_gen/openk/<service>/v1;<service>v1";
+   ```
 
-#### buf.yaml
-```yaml
-version: v2
-modules:
-  - path: .
-    name: buf.build/neox5/openk
-    excludes:
-      - vendor/google/protobuf
-lint:
-  use:
-    - DEFAULT
-  except:
-    - PACKAGE_VERSION_SUFFIX
-breaking:
-  use:
-    - FILE
-```
+2. Service Definition:
+   ```protobuf
+   service HealthService {
+     rpc Check(CheckRequest) returns (CheckResponse);
+   }
+   ```
 
-#### buf.gen.yaml
-```yaml
-version: v2
-clean: true
-managed:
-  enabled: true
-  override:
-    - file_option: go_package_prefix
-      value: github.com/neox5/openk/internal/api_gen
-plugins:
-  - remote: buf.build/protocolbuffers/go:v1.31.0
-    out: ../internal/api_gen
-    opt: 
-      - paths=source_relative
-  - remote: buf.build/grpc/go:v1.3.0
-    out: ../internal/api_gen
-    opt:
-      - paths=source_relative
-```
+3. Version Management:
+   - Each version in separate directory (`v1/`, `v2/`)
+   - No breaking changes within a version
+   - New versions for breaking changes
 
-### Key Configuration Settings
+### Implementation Guidelines
 
-#### buf.yaml
-Key settings:
-- `modules`: Local module configuration without external dependencies
-- `lint`: Enforces API design standards (DEFAULT ruleset)
-- `breaking`: Detects breaking API changes using FILE ruleset
-- `excludes`: Prevents vendor directory from being processed
+1. Error Handling:
+   ```go
+   return nil, opene.NewInternalError("health", "check", "database unavailable")
+   ```
 
-#### buf.gen.yaml
-Key settings:
-- `clean`: Clears output directory before generation
-- `managed`: Enables consistent package naming
-- `plugins`: Configures Go and gRPC code generation
-- `out`: Places generated code in internal/api_gen
+2. Logging:
+   ```go
+   s.logger.LogAttrs(ctx, slog.LevelInfo, "health check requested",
+       slog.String("version", "v1"),
+       slog.Int("components", len(req.Components)),
+   )
+   ```
+
+3. Context Usage:
+   - Always pass context through gRPC methods
+   - Use for cancellation and timeouts
+   - Include in logging calls
+
+4. Registration:
+   ```go
+   server := grpc.NewServer()
+   v1Server, err := health.RegisterHealthServers(server, logger)
+   if err != nil {
+       return err
+   }
+   ```
+
+### Testing Approach
+
+1. Server Tests:
+   ```
+   services/health/
+   ├── health_server_v1_test.go
+   └── health_register_test.go
+   ```
+
+2. Integration Tests:
+   - Use real gRPC client/server
+   - Test all supported versions
+   - Verify version compatibility
+
+3. Test Naming:
+   ```go
+   func TestHealthServerV1_Check(t *testing.T) {...}
+   func TestHealthServerV1_WatchHealth(t *testing.T) {...}
+   ```
 
 ## Testing Guide
 
