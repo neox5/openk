@@ -3,7 +3,7 @@ syntax = "proto3";
 package openk.health.v2;
 option go_package = "github.com/neox5/openk/internal/api_gen/openk/health/v2;healthv2";
 
-import "openk/health/v2/health.proto";
+import "openk/health/v2/health_v2.proto";
 
 service HealthService {
   rpc Check(CheckRequest) returns (CheckResponse);

@@ -34,14 +34,14 @@
 │   │   └── openk
 │   │       ├── common
 │   │       │   └── v1
-│   │       │       └── common.pb.go
+│   │       │       └── common_v1.pb.go
 │   │       └── health
 │   │           ├── v1
-│   │           │   └── health.pb.go
+│   │           │   └── health_v1.pb.go
 │   │           └── v2
-│   │               ├── health.pb.go
-│   │               ├── service_grpc.pb.go
-│   │               └── service.pb.go
+│   │               ├── health_service_v2_grpc.pb.go
+│   │               ├── health_service_v2.pb.go
+│   │               └── health_v2.pb.go
 │   ├── app
 │   │   ├── client
 │   │   │   ├── login.go
@@ -127,13 +127,13 @@
 │   ├── openk
 │   │   ├── common
 │   │   │   └── v1
-│   │   │       └── common.proto
+│   │   │       └── common_v1.proto
 │   │   └── health
 │   │       ├── v1
-│   │       │   └── health.proto
+│   │       │   └── health_v1.proto
 │   │       └── v2
-│   │           ├── health.proto
-│   │           └── service.proto
+│   │           ├── health_service_v2.proto
+│   │           └── health_v2.proto
 │   ├── vendor
 │   │   └── google
 │   │       └── protobuf

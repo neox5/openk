@@ -65,6 +65,11 @@ for file in "$SOURCE_DIR/internal/server/interceptors/"*; do
   link_file "$file"
 done
 
+# Link all proto files under openk/proto/openk
+find "$SOURCE_DIR/proto/openk" -type f -name '*.proto' | while read -r file; do
+  link_file "$file"
+done
+
 # Link openk/makefile
 link_file "$SOURCE_DIR/makefile"
 
