@@ -44,3 +44,7 @@ proto-breaking:
 .PHONY: proto
 proto:
 	cd proto && buf generate
+
+.PHONY: flatf
+flatf:
+	./scripts/flat_folder.sh

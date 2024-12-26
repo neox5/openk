@@ -1,4 +1,4 @@
-../openk
+/home/neox5/dev/github.com/neox5/openk
 ├── bin
 │   └── openk
 ├── cmd
@@ -141,6 +141,8 @@
 │   │           └── timestamp.proto
 │   ├── buf.gen.yaml
 │   └── buf.yaml
+├── scripts
+│   └── flat_folder.sh
 ├── context-logging-design.md
 ├── context-logging-todos.md
 ├── go.mod
@@ -157,4 +159,4 @@
 ├── README.md
 └── repo_dir.txt
 
-43 directories, 115 files
+44 directories, 116 files
