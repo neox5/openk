@@ -11,10 +11,8 @@ internal/
     │   ├── logging.go   # Logging interceptor ✓
     │   └── logging_test.go  # Interceptor tests ✓
     └── services/        # Service implementations
+        ├── auth/        # Auth service [NEXT]
         └── health/      # Health service ✓
-            ├── health_server_v1.go  # V1 implementation ✓
-            ├── health_server_v1_test.go  # V1 tests ✓
-            └── health_register.go   # Version registration ✓
 ```
 
 ## Implementation Progress
@@ -45,62 +43,74 @@ internal/
 - [x] Service documentation
 - [x] Example client usage
 
-## Next Priority: Interceptors
+## Next Priority: Registration Flow Implementation
 
-### 1. Authentication Interceptor
-- [ ] Design auth token validation
-- [ ] Implement UnaryAuth interceptor
-- [ ] Implement StreamAuth interceptor
-- [ ] Add auth metadata extraction
-- [ ] Integration with auth service
-- [ ] Comprehensive tests
+### 1. Proto Definition
+- [ ] Create auth_service_v1.proto
+  - [ ] Define RegisterRequest message
+  - [ ] Define RegisterResponse message
+  - [ ] Add field validation rules
+  - [ ] Document message fields
+- [ ] Generate proto code
+- [ ] Update buf.gen.yaml if needed
 
-### 2. Recovery Interceptor
-- [ ] Design panic recovery approach
-- [ ] Implement UnaryRecovery interceptor
-- [ ] Implement StreamRecovery interceptor
-- [ ] Error translation
-- [ ] Recovery tests
-- [ ] Documentation
+### 2. Auth Service Implementation
+- [ ] Create auth_server_v1.go structure
+- [ ] Implement Register method
+  - [ ] Request validation
+  - [ ] Username availability check
+  - [ ] Store key derivation params
+  - [ ] Store initial key pair
+  - [ ] Error handling
+- [ ] Add auth_server_v1_test.go
+  - [ ] Success case tests
+  - [ ] Error case tests
+  - [ ] Edge case handling
 
-### 3. Validation Interceptor
-- [ ] Request validation design
-- [ ] Implement UnaryValidation interceptor
-- [ ] Implement StreamValidation interceptor
-- [ ] Integration with proto validation
-- [ ] Validation tests
-- [ ] Usage examples
+### 3. Storage Integration
+- [ ] Extend storage Backend interface
+  - [ ] Add StoreDerivationParams method
+  - [ ] Add StoreKeyPair method
+- [ ] Update in-memory implementation
+- [ ] Add storage tests for new methods
+- [ ] Implement transaction support
+- [ ] Add cleanup handling
 
-### 4. Metrics Interceptor
-- [ ] Define key metrics
-- [ ] Implement UnaryMetrics interceptor
-- [ ] Implement StreamMetrics interceptor
-- [ ] Prometheus integration
-- [ ] Metrics tests
-- [ ] Documentation
+### 4. Client Integration
+- [ ] Implement client-side key derivation
+- [ ] Add key pair generation
+- [ ] Create request builder
+- [ ] Add error handling
+- [ ] Add integration tests
+
+### 5. Error Handling
+- [ ] Define specific error types
+  - [ ] Username validation
+  - [ ] Key pair validation
+  - [ ] Storage errors
+- [ ] Implement error translation
+- [ ] Add error handling tests
+- [ ] Document error handling patterns
 
 ## Future Server Enhancements
 
-### 1. Transport Security
+### 1. Login Flow
+- [ ] Session management design
+- [ ] Token validation
+- [ ] Key retrieval flow
+- [ ] Error handling
+
+### 2. Transport Security
 - [ ] TLS configuration
 - [ ] Certificate management
 - [ ] Mutual TLS support
 - [ ] Security tests
-- [ ] Security documentation
-
-### 2. Performance Tuning
-- [ ] Message size configuration
-- [ ] Buffer tuning
-- [ ] Compression options
-- [ ] Performance tests
-- [ ] Tuning documentation
 
 ### 3. Additional Services
-- [ ] Define next service priorities
-- [ ] Service template creation
-- [ ] Version management strategy
-- [ ] Service test patterns
-- [ ] Client generation
+- [ ] Secret management service
+- [ ] Key management service
+- [ ] Sync service
+- [ ] Audit service
 
 ## Testing Requirements
 
@@ -108,49 +118,28 @@ internal/
 - [x] Server lifecycle
 - [x] Option building
 - [x] Health service
-- [ ] New interceptors
-- [ ] Configuration validation
+- [ ] Auth service
+- [ ] Storage integration
 
 ### 2. Integration Tests
 - [x] Server startup/shutdown
 - [x] Health service
-- [ ] Interceptor chains
-- [ ] Authentication flow
+- [ ] Registration flow
 - [ ] Error scenarios
+- [ ] Storage operations
 
 ### 3. Performance Tests
 - [ ] Connection handling
-- [ ] Concurrent requests
+- [ ] Concurrent registrations
 - [ ] Memory usage
 - [ ] Latency measurements
-- [ ] Resource monitoring
-
-## Documentation Needs
-
-### 1. Architecture
-- [ ] Server design principles
-- [ ] Option organization
-- [ ] Interceptor patterns
-- [ ] Service patterns
-
-### 2. Operations
-- [ ] Configuration guide
-- [ ] Security setup
-- [ ] Monitoring guide
-- [ ] Troubleshooting guide
-
-### 3. Development
-- [ ] Service implementation guide
-- [ ] Interceptor creation guide
-- [ ] Testing patterns
-- [ ] Client usage examples
 
 ## Success Criteria
 
 ### 1. Functionality
-- Complete interceptor chain
-- Robust error handling
-- Proper security
+- Complete registration flow
+- Proper error handling
+- Secure key storage
 - Clean shutdown
 
 ### 2. Performance
@@ -166,24 +155,23 @@ internal/
 - Easy to extend
 
 ## Implementation Notes
-- Keep options organized and documented
+- Follow patterns established in health service
 - Maintain clear error handling
-- Follow consistent patterns
-- Build for extensibility
 - Focus on security first
+- Build for extensibility
 
 ## Immediate Next Steps
-1. Begin authentication interceptor
-   - Design token validation
-   - Plan metadata handling
-   - Security considerations
+1. Begin proto definition for auth service
+   - Draft message structures
+   - Review with team
+   - Document fields
 
-2. Start recovery interceptor
-   - Design error translation
-   - Plan logging integration
-   - Consider monitoring needs
+2. Start auth service implementation
+   - Basic structure
+   - Registration method
+   - Test framework
 
-3. Plan validation strategy
-   - Research proto validation
-   - Consider performance impact
-   - Design error responses
+3. Plan storage integration
+   - Review interface needs
+   - Plan transaction support
+   - Design cleanup handling
