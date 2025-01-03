@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package openk.common.v1;
+
+option go_package = "github.com/neox5/openk/internal/api_gen/openk/common/v1;commonv1";
+
+// Algorithm represents supported cryptographic algorithms
+enum Algorithm {
+  ALGORITHM_UNSPECIFIED = 0;
+  ALGORITHM_RSA_OAEP_SHA256 = 1;  // RSA-2048 with OAEP
+  ALGORITHM_AES_GCM_256 = 2;      // AES-256-GCM
+}
+
+// Ciphertext represents encrypted data with authentication
+message Ciphertext {
+  bytes nonce = 1;  // 96 bits for GCM
+  bytes data = 2;   // Encrypted data
+  bytes tag = 3;    // 128 bits for GCM
+}
+
+// KeyDerivationParams represents PBKDF2 parameters
+message KeyDerivationParams {
+  int32 iterations = 1;  // Iteration count for PBKDF2
+  bytes salt = 2;        // Salt value
+}

@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package openk.common.v1;
+
+option go_package = "github.com/neox5/openk/internal/api_gen/openk/common/v1;commonv1";
+
+// Error represents a standard error response following RFC 7807
+message Error {
+  string type = 1;        // URI reference identifying the error type
+  string title = 2;       // Short, human-readable summary
+  int32 status = 3;       // HTTP status code
+  string detail = 4;      // Detailed error explanation
+  string instance = 5;    // URI reference to error occurrence
+  string extensions = 6;  // Additional context as JSON
+}

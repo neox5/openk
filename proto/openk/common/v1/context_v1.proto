@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package openk.common.v1;
+
+option go_package = "github.com/neox5/openk/internal/api_gen/openk/common/v1;commonv1";
+
+import "google/protobuf/timestamp.proto";
+
+// RequestContext contains common request metadata
+message RequestContext {
+  string request_id = 1;            // Unique request identifier
+  string trace_id = 2;             // For distributed tracing
+  google.protobuf.Timestamp timestamp = 3;
+}
+
+// Metadata represents request context information
+message Metadata {
+  map<string, string> labels = 1;     // Key-value pairs
+  google.protobuf.Timestamp created_at = 2;
+}
+
