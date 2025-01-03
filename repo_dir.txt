@@ -21,6 +21,7 @@
 │   ├── misc
 │   │   └── openk-banner.md
 │   ├── models
+│   │   ├── auth-models.md
 │   │   └── core-models.md
 │   ├── specs
 │   │   └── crypto-core_spec.md
@@ -160,4 +161,4 @@
 ├── README.md
 └── repo_dir.txt
 
-44 directories, 117 files
+44 directories, 118 files
