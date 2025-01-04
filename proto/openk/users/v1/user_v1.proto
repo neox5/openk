@@ -7,10 +7,10 @@ option go_package = "github.com/neox5/openk/internal/api_gen/openk/users/v1;user
 import "openk/common/v1/crypto_v1.proto";
 import "google/protobuf/timestamp.proto";
 
-// UserProfile represents the public user information
-message UserProfile {
-  string id = 1;
-  string username = 2;
-  bytes public_key = 3;
-  google.protobuf.Timestamp created_at = 4;
+// Public-facing user information.
+message UserIdentity {
+  string id = 1;                            // Unique user identifier.
+  string username = 2;                      // Unique username.
+  bytes public_key = 3;                     // User's public key.
+  google.protobuf.Timestamp created_at = 4; // Account creation timestamp.
 }

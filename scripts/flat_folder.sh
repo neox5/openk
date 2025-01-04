@@ -81,6 +81,11 @@ for file in "$SOURCE_DIR/internal/app/client/"* "$SOURCE_DIR/internal/cli/auth/"
   link_file "$file"
 done
 
+# Link all storage files
+for file in "$SOURCE_DIR/internal/storage/"*; do
+  [[ $file == *_test.go ]] && continue
+  link_file "$file"
+done
 
 # Link openk/makefile
 link_file "$SOURCE_DIR/makefile"

@@ -10,21 +10,21 @@ import "openk/common/v1/error_v1.proto";
 import "openk/users/v1/user_v1.proto";
 
 service UserService {
-  // CreateUser registers a new user
-  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {}
+  // Registers a new user.
+  rpc RegisterUser(RegisterUserRequest) returns (RegisterUserResponse);
 }
 
-message CreateUserRequest {
-  openk.common.v1.RequestContext context = 1;
-  string username = 2;
-  int32 iterations = 3;
-  bytes salt = 4;
-  bytes auth_key = 5;            // Raw auth key, will be hashed by service
-  bytes public_key = 6;
-  openk.common.v1.Ciphertext encrypted_key_pair = 7;
+message RegisterUserRequest {
+  openk.common.v1.RequestContext context = 1;       // Request metadata (e.g., trace IDs).
+  string username = 2;                              // Unique username for the user.
+  int32 iterations = 3;                             // Key derivation iterations.
+  bytes salt = 4;                                   // Salt for key derivation.
+  bytes auth_key = 5;                               // Raw auth key to be hashed.
+  bytes public_key = 6;                             // Public key of the user.
+  openk.common.v1.Ciphertext encrypted_keypair = 7; // Encrypted asymmetric keypair.
 }
 
-message CreateUserResponse {
-  openk.common.v1.Error error = 1;
-  UserProfile profile = 2;       // Only public user information returned
+message RegisterUserResponse {
+  openk.common.v1.Error error = 1; // Error info if registration fails.
+  UserIdentity identity = 2;       // Public-facing user information.
 }

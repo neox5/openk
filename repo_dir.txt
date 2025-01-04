@@ -37,11 +37,16 @@
 │   │       │       ├── context_v1.pb.go
 │   │       │       ├── crypto_v1.pb.go
 │   │       │       └── error_v1.pb.go
-│   │       └── health
+│   │       ├── health
+│   │       │   └── v1
+│   │       │       ├── health_service_v1_grpc.pb.go
+│   │       │       ├── health_service_v1.pb.go
+│   │       │       └── health_v1.pb.go
+│   │       └── users
 │   │           └── v1
-│   │               ├── health_service_v1_grpc.pb.go
-│   │               ├── health_service_v1.pb.go
-│   │               └── health_v1.pb.go
+│   │               ├── user_service_v1_grpc.pb.go
+│   │               ├── user_service_v1.pb.go
+│   │               └── user_v1.pb.go
 │   ├── app
 │   │   ├── client
 │   │   │   ├── login.go
@@ -125,10 +130,7 @@
 │   │   ├── grpc_options.go
 │   │   └── grpc_server.go
 │   └── storage
-│       ├── in_memory_mini_storage.go
-│       ├── memory_backend.go
-│       ├── mini_storage_backend.go
-│       └── storage_backend.go
+│       └── user_storage.go
 ├── proto
 │   ├── openk
 │   │   ├── common
@@ -141,8 +143,9 @@
 │   │   │       ├── health_service_v1.proto
 │   │   │       └── health_v1.proto
 │   │   └── users
-│   │       ├── user_service_v1.proto
-│   │       └── user_v1.proto
+│   │       └── v1
+│   │           ├── user_service_v1.proto
+│   │           └── user_v1.proto
 │   ├── vendor
 │   │   └── google
 │   │       └── protobuf
@@ -168,4 +171,4 @@
 ├── README.md
 └── repo_dir.txt
 
-45 directories, 124 files
+48 directories, 124 files
