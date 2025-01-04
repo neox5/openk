@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package openk.users.v1;
+
+option go_package = "github.com/neox5/openk/internal/api_gen/openk/users/v1;usersv1";
+
+import "openk/users/v1/user_v1.proto";
+import "openk/common/v1/error_v1.proto";
+import "openk/common/v1/context_v1.proto";
+
+service UserService {
+  // CreateUser registers a new user
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {}
+}
+
+message CreateUserRequest {
+  common.v1.RequestContext context = 1;
+  string username = 2;
+  string key_derivation_id = 3;
+  bytes auth_key = 4;
+  bytes public_key = 5;
+  common.v1.Ciphertext encrypted_key_pair = 6;
+}
+
+message CreateUserResponse {
+  common.v1.Error error = 1;
+  User user = 2;
+}

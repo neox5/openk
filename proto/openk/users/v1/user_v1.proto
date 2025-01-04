@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package openk.users.v1;
+
+option go_package = "github.com/neox5/openk/internal/api_gen/openk/users/v1;usersv1";
+
+import "openk/common/v1/crypto_v1.proto";
+import "google/protobuf/timestamp.proto";
+
+message User {
+  string id = 1;
+  string username = 2;
+  string key_derivation_id = 3;
+  bytes auth_key = 4;
+  bytes public_key = 5;
+  common.v1.Ciphertext encrypted_key_pair = 6;
+  google.protobuf.Timestamp created_at = 7;
+}

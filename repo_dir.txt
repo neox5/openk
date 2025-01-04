@@ -34,7 +34,9 @@
 │   │   └── openk
 │   │       ├── common
 │   │       │   └── v1
-│   │       │       └── common_v1.pb.go
+│   │       │       ├── context_v1.pb.go
+│   │       │       ├── crypto_v1.pb.go
+│   │       │       └── error_v1.pb.go
 │   │       └── health
 │   │           └── v1
 │   │               ├── health_service_v1_grpc.pb.go
@@ -131,11 +133,16 @@
 │   ├── openk
 │   │   ├── common
 │   │   │   └── v1
-│   │   │       └── common_v1.proto
-│   │   └── health
-│   │       └── v1
-│   │           ├── health_service_v1.proto
-│   │           └── health_v1.proto
+│   │   │       ├── context_v1.proto
+│   │   │       ├── crypto_v1.proto
+│   │   │       └── error_v1.proto
+│   │   ├── health
+│   │   │   └── v1
+│   │   │       ├── health_service_v1.proto
+│   │   │       └── health_v1.proto
+│   │   └── users
+│   │       ├── user_service_v1.proto
+│   │       └── user_v1.proto
 │   ├── vendor
 │   │   └── google
 │   │       └── protobuf
@@ -161,4 +168,4 @@
 ├── README.md
 └── repo_dir.txt
 
-44 directories, 118 files
+45 directories, 124 files
