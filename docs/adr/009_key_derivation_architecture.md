@@ -10,36 +10,34 @@ The system needs a clear approach for deriving cryptographic keys from user cred
 
 ### 1. Key Derivation Process
 
-#### 1.1 Master Key Derivation
+#### 1.1 Master Key Derivation (Client-side)
 ```go
-type MasterKeyDerivation struct {
-    Username    string    // Used as salt
-    Iterations  int      // Default: 100,000
-}
-
 // Master Key used for encryption operations
 MasterKey = PBKDF2(
     password,
     username,    // Used as salt
-    iterations,
+    iterations,  // Default: 100,000
     keyLength    // 256 bits
 )
 ```
 
-#### 1.2 Auth Key Derivation
+#### 1.2 Auth Key Derivation and Storage
 ```go
-// Auth Key used for API authentication, derived in parallel
+// Auth Key derived from Master Key (Client-side)
 AuthKey = PBKDF2(
-    password,
+    MasterKey,
     "openk4auth",    // Constant salt
     iterations,      // Same iteration count
     keyLength        // 256 bits
 )
+
+// Auth Key Hashing (Service Layer)
+AuthKeyHash = SHA256(AuthKey)    // Computed before storage
 ```
 
 ### 2. Implementation Requirements
 
-#### 2.1 Key Operations
+#### 2.1 Client Operations
 ```go
 type MasterKeyOps interface {
     // Derive both master and auth keys from password
@@ -59,15 +57,21 @@ type MasterKeyOps interface {
     
     // Get derived auth key for API operations
     GetAuthKey() ([]byte, error)
-    
-    // Get stable identifier for this encryption provider
-    ID() string
 }
 ```
 
-#### 2.2 Key Usage
+#### 2.2 Service Layer Operations
+```go
+type UserService interface {
+    // Creates user record with hashed auth key
+    CreateUser(ctx context.Context, username string, authKey []byte, ...) error
+}
+```
+
+#### 2.3 Key Usage
 - Master Key: Primary encryption key for protecting KeyPairs
-- Auth Key: Used exclusively for API authentication
+- Auth Key: Transmitted for API authentication
+- Auth Key Hash: Stored form after service-layer hashing
 - Independent derivation paths
 - Separate rotation cycles
 
@@ -76,10 +80,10 @@ type MasterKeyOps interface {
 #### 3.1 Advantages
 - Independent key derivation paths
 - Deterministic salt for master key
-- No additional salt storage needed
-- Server-side key stretching
+- No reversible auth key storage
+- Simple and secure auth key hashing
 - Clear separation of auth/encryption
-- Proven approach (follows Bitwarden model)
+- Proven approach
 
 #### 3.2 Memory Protection
 - Clear both keys after use
@@ -93,28 +97,6 @@ type MasterKeyOps interface {
 - Rate limiting on authentication
 - Clear error messages
 
-### 4. Implementation Notes
-
-#### 4.1 Constants
-```go
-const (
-    // PBKDF2 parameters
-    DefaultIterations = 100_000
-    MasterKeySize    = 32       // 256 bits
-    AuthSalt         = "openk4auth"
-)
-```
-
-#### 4.2 Error Types
-```go
-var (
-    ErrInvalidPassword = errors.New("invalid password")
-    ErrInvalidUsername = errors.New("invalid username")
-    ErrKeyNotDerived   = errors.New("master key not derived")
-    ErrKeyAlreadySet   = errors.New("master key already set")
-)
-```
-
 ## Consequences
 
 ### Positive
@@ -124,20 +106,21 @@ var (
 - Simple key recovery path
 - Clear separation of concerns
 - Minimal state management
+- Auth key never stored in raw form
 
 ### Negative
 - Two key derivation operations required
-- Fixed to PBKDF2 for both operations
-- Server must maintain auth stretching
-- Both keys need memory protection
+- Fixed to PBKDF2 for initial derivation
+- Raw auth key transmitted (protected by TLS)
+- Multiple keys need memory protection
 
 ## Notes
 - Regular review of iteration counts
 - Consider adding parameters for quantum resistance
 - Monitor for new key derivation standards
 - Document clear recovery procedures
+- Service layer responsible for auth key hashing
 
 ## References
-- crypto-spec.md: Core cryptographic specifications
 - NIST SP 800-132: Key Derivation Using PBKDF
-- Bitwarden Security Whitepaper
+- Secure Hash Standard (SHA-256)

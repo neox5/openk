@@ -6,22 +6,24 @@
 ```go
 // UserCreate represents client-side registration data
 type UserCreate struct {
-    Username           string
-    KeyDerivationID   string    // From initial key derivation
-    AuthKey           []byte    // Derived from Master Key
-    PublicKey         []byte    // From generated KeyPair
-    EncryptedKeyPair  Ciphertext // Private key protected via DEK/Envelope
+    Username         string
+    Iterations      int       // PBKDF2 iteration count
+    Salt           []byte    // Salt for key derivation
+    AuthKey        []byte    // Derived from Master Key, transmitted to service
+    PublicKey      []byte    // From generated KeyPair
+    EncryptedKeyPair crypto.Ciphertext // Private key protected via DEK/Envelope
 }
 
 // User represents a stored user with their auth data
 type User struct {
-    ID                string
-    Username          string
-    KeyDerivationID   string    // References key derivation params
-    AuthKey           []byte    // For future authentication
-    PublicKey         []byte
-    EncryptedKeyPair  Ciphertext
-    CreatedAt         time.Time
+    ID              string
+    Username        string
+    Iterations      int       // PBKDF2 iteration count
+    Salt           []byte    // Salt for key derivation
+    AuthKeyHash    []byte    // SHA256(AuthKey)
+    PublicKey      []byte
+    EncryptedKeyPair crypto.Ciphertext
+    CreatedAt      time.Time
 }
 ```
 
@@ -32,8 +34,9 @@ type User struct {
 CREATE TABLE users (
     id              UUID PRIMARY KEY,
     username        TEXT NOT NULL UNIQUE,
-    deriv_id        UUID NOT NULL REFERENCES key_derivation_params(id),
-    auth_key        BYTEA NOT NULL,
+    iterations      INTEGER NOT NULL,
+    salt            BYTEA NOT NULL,
+    auth_key_hash   BYTEA NOT NULL,
     public_key      BYTEA NOT NULL,
     -- Encrypted key pair components
     key_nonce       BYTEA NOT NULL,
@@ -44,7 +47,6 @@ CREATE TABLE users (
 
 -- Indexes
 CREATE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_users_deriv_id ON users(deriv_id);
 ```
 
 ### Key-Value (Redis)
@@ -52,8 +54,9 @@ CREATE INDEX idx_users_deriv_id ON users(deriv_id);
 # User records
 user:{id} -> {
     username: string,
-    deriv_id: string,
-    auth_key: bytes,
+    iterations: number,
+    salt: bytes,
+    auth_key_hash: bytes,
     public_key: bytes,
     key_nonce: bytes,
     key_data: bytes,
@@ -63,7 +66,6 @@ user:{id} -> {
 
 # Indexes
 username_to_user:{username} -> id
-deriv_to_user:{deriv_id} -> id
 ```
 
 ### Document (MongoDB)
@@ -72,8 +74,9 @@ deriv_to_user:{deriv_id} -> id
 {
     _id: UUID,
     username: String,
-    derivId: UUID,      // References key derivation params
-    authKey: Binary,    // For future authentication
+    iterations: Number,
+    salt: Binary,
+    authKeyHash: Binary,    // SHA256(AuthKey)
     publicKey: Binary,
     encryptedKeyPair: {
         nonce: Binary,
@@ -85,14 +88,13 @@ deriv_to_user:{deriv_id} -> id
 
 // Indexes
 db.users.createIndex({ "username": 1 }, { unique: true });
-db.users.createIndex({ "derivId": 1 });
 ```
 
 ## Notes
 
 1. **Storage Requirements**
    - Username must be unique across the system
-   - References to key derivation parameters must be valid
+   - Key derivation parameters stored with user
    - All components must be stored atomically
    - No sensitive data storage (follows zero-knowledge principle)
 
@@ -100,4 +102,3 @@ db.users.createIndex({ "derivId": 1 });
    - Create new user
    - Check username availability
    - Retrieve user by username or ID
-   - List users with key derivation info
