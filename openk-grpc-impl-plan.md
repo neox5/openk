@@ -13,16 +13,17 @@ internal/
 │       ├── users/       # User service [NEXT]
 │       └── health/      # Health service ✓
 └── storage/             # Storage layer ✓
-    ├── models/
-    │   └── user.go               # User models ✓
-    ├── memory/
-    │   └── user_memory_store.go  # In-memory implementation ✓
-    └── store.go                  # Core interfaces ✓
+    ├── models/          # Domain models ✓
+    │   └── user.go      # User models ✓
+    ├── memory/          # Memory implementation ✓
+    └── store.go         # Core interfaces ✓
 ```
 
 ## Implementation Progress
 
-### 1. Server Core ✓
+### Completed Components ✓
+
+#### 1. Server Core ✓
 - [x] Basic gRPC server setup
 - [x] Option organization
 - [x] Configuration management
@@ -31,95 +32,122 @@ internal/
 - [x] Connection management
 - [x] Graceful shutdown
 
-### 2. Proto Definitions ✓
-- [x] User service proto structure
-- [x] Common types (context, crypto, error)
-- [x] User types and messages
-- [x] Service definitions
+#### 2. Storage Layer ✓
+- [x] Store interfaces
+- [x] User models
+- [x] Memory implementation
+- [x] Comprehensive test suite
+  - [x] Basic operations (Create, Get)
+  - [x] Error handling
+  - [x] Concurrency tests
+  - [x] Immutability validation
 
-### 3. Storage Layer ✓
-- [x] Define store interfaces
-- [x] Create user models
-- [x] Implement thread-safe memory store
-- [x] Add proper error handling
+## Next Priority: User Service Implementation
 
-## Next Priority: Storage Testing + User Service Implementation
+### 1. Service Structure
+```go
+// users/users_server_v1.go
+type UsersServerV1 struct {
+    usersv1.UnimplementedUserServiceServer
+    store   storage.UserStore
+    logger  *slog.Logger
+}
 
-### 1. Memory Store Testing [NEXT]
-Create memory/user_memory_store_test.go:
-- [ ] Basic operation tests
-  - [ ] Create new user
-  - [ ] Get by ID
-  - [ ] Get by username
-- [ ] Error handling tests
-  - [ ] Duplicate username
-  - [ ] User not found
-  - [ ] Invalid inputs
-- [ ] Concurrency tests
-  - [ ] Parallel creation
-  - [ ] Read/write scenarios
-  - [ ] Multiple readers
-
-### 2. User Service Implementation
-```
-services/users/
-├── users_server_v1.go       # V1 implementation
-├── users_server_v1_test.go  # Server tests
-└── users_register.go        # Service registration
+// users/users_register.go
+func RegisterUserServers(srv *grpc.Server, store storage.UserStore, logger *slog.Logger) error {
+    // Version registration
+}
 ```
 
-Implementation tasks:
-- [ ] Create UsersServerV1 structure
-- [ ] Implement RegisterUser method
-  - [ ] Request validation
-  - [ ] Storage integration
-  - [ ] Error mapping to gRPC
-  - [ ] Success response building
-- [ ] Add registration function
-  - [ ] Version tracking
-  - [ ] Logger configuration
-  - [ ] Error handling
+### 2. Implementation Steps
 
-### 3. Service Testing
-- [ ] Unit tests with mocked storage
-- [ ] Integration tests with memory store
-- [ ] Error handling tests
-- [ ] Logging verification
-- [ ] Metrics collection
+#### Phase 1: Core Service Setup
+- [ ] Create service structure
+- [ ] Add store dependency injection
+- [ ] Setup logging configuration
+- [ ] Implement registration function
+- [ ] Add basic health checks
+
+#### Phase 2: RegisterUser Implementation
+- [ ] Request validation
+  - [ ] Username constraints
+  - [ ] Key derivation parameters
+  - [ ] Cryptographic material
+- [ ] Error mapping
+  - [ ] Storage errors → gRPC status
+  - [ ] Validation errors → status.InvalidArgument
+  - [ ] Conflict errors → status.AlreadyExists
+- [ ] Success response building
+  - [ ] User identity creation
+  - [ ] Timestamp handling
+  - [ ] Public key formatting
+
+### 3. Testing Framework
+
+#### Server Test Structure
+```go
+// users/users_server_v1_test.go
+type UsersServerTestSuite struct {
+    store  storage.UserStore
+    server *UsersServerV1
+}
+
+func (s *UsersServerTestSuite) SetupTest() {
+    s.store = memory.NewUserMemoryStore()
+    s.server = NewUsersServerV1(s.store, testLogger)
+}
+```
+
+#### Test Categories
+Following storage test patterns:
+1. Basic Operations
+   - [ ] Valid user registration
+   - [ ] Error cases (invalid input)
+   - [ ] Duplicate username handling
+
+2. Input Validation
+   - [ ] Username constraints
+   - [ ] Required fields
+   - [ ] Parameter validation
+   - [ ] Byte length checks
+
+3. Concurrency
+   - [ ] Parallel registration attempts
+   - [ ] Race condition handling
+   - [ ] Resource cleanup
+
+4. Integration
+   - [ ] End-to-end flow
+   - [ ] Storage interaction
+   - [ ] Error propagation
 
 ### 4. Metrics & Logging
-Extend existing logging interceptor:
-- [ ] User registration metrics
-- [ ] Error tracking
-- [ ] Latency measurements
+
+#### Operation Metrics
+- [ ] Registration attempts
 - [ ] Success/failure rates
-- [ ] Resource usage tracking
+- [ ] Latency tracking
+- [ ] Error type distribution
+
+#### Structured Logging
+- [ ] Operation entry/exit
+- [ ] Error context capture
+- [ ] User activity tracking
+- [ ] Performance monitoring
 
 ## Future Enhancements
 
-### 1. Additional User Operations
+### 1. Additional Operations
 - [ ] User lookup methods
 - [ ] Profile updates
 - [ ] Key rotation support
 - [ ] Account recovery
 
-### 2. Authentication
-- [ ] Session management
-- [ ] Token validation
-- [ ] MFA support
-- [ ] OAuth integration
-
-### 3. Advanced Features
+### 2. Advanced Features
 - [ ] Batch operations
-- [ ] Stream support
-- [ ] Cache integration
+- [ ] Streaming support
 - [ ] Rate limiting
-
-### 4. Production Storage
-- [ ] PostgreSQL implementation
-- [ ] Redis caching layer
-- [ ] Migration support
-- [ ] Backup strategies
+- [ ] Cache integration
 
 ## Success Criteria
 
@@ -137,19 +165,20 @@ Extend existing logging interceptor:
 
 ### 3. Maintainability
 - Clear documentation
-- Consistent patterns
 - >80% test coverage
+- Consistent patterns
 - Easy to extend
 
 ## Implementation Notes
-- Test storage layer thoroughly before service integration
-- Follow patterns from health service
-- Use existing error system
-- Maintain zero-knowledge architecture
-- Focus on extensibility
+- Follow established testing patterns from userstore
+- Maintain strict input validation
+- Use structured logging consistently
+- Focus on error handling clarity
+- Keep crypto operations side-effect free
+- Consider future version compatibility
 
 ## Immediate Next Steps
-1. Create user_memory_store_test.go
-2. Implement core test cases
-3. Add concurrency tests
-4. Begin users service implementation
+1. Create users_server_v1.go structure
+2. Setup test infrastructure
+3. Implement core registration flow
+4. Add comprehensive tests

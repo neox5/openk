@@ -79,9 +79,13 @@ for file in "$SOURCE_DIR/internal/server/interceptors/"* \
   link_file "$file"
 done
 
-# Link all proto files under openk/proto/openk
-find "$SOURCE_DIR/proto/openk" -type f -name '*.proto' | while read -r file; do
-  link_file "$file"
+# Link proto files
+for file in "$SOURCE_DIR/proto/openk/common/v1/"*.proto \
+            "$SOURCE_DIR/proto/openk/health/v1/"*.proto \
+            "$SOURCE_DIR/proto/openk/users/v1/"*.proto \
+            "$SOURCE_DIR/proto/vendor/google/protobuf/"*.proto \
+            "$SOURCE_DIR/proto/"buf.* ; do
+    link_file "$file"
 done
 
 # Link CLI and client implementations

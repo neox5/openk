@@ -121,11 +121,13 @@
 │   │   │   ├── logging.go
 │   │   │   └── logging_test.go
 │   │   ├── services
-│   │   │   └── health
-│   │   │       ├── health_register.go
-│   │   │       ├── health_register_test.go
-│   │   │       ├── health_server_v1.go
-│   │   │       └── health_server_v1_test.go
+│   │   │   ├── health
+│   │   │   │   ├── health_register.go
+│   │   │   │   ├── health_register_test.go
+│   │   │   │   ├── health_server_v1.go
+│   │   │   │   └── health_server_v1_test.go
+│   │   │   └── users
+│   │   │       └── users_server_v1.go
 │   │   ├── config.go
 │   │   ├── grpc_options.go
 │   │   └── grpc_server.go
@@ -185,4 +187,4 @@
 ├── README.md
 └── repo_dir.txt
 
-52 directories, 134 files
+53 directories, 135 files
