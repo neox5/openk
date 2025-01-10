@@ -19,7 +19,7 @@ mkdir -p "$TARGET_DIR"
 
 # Step 3: Generate repo_dir.txt
 REPO_DIR_FILE="$SOURCE_DIR/repo_dir.txt"
-echo "Generating repo_dir.txt at $REPO_DIR_FILE..."
+echo "Generating repo_dir.txt at $REPO_DIR_FILE"
 tree --dirsfirst "$SOURCE_DIR" > "$REPO_DIR_FILE"
 echo "repo_dir.txt generated."
 
@@ -38,30 +38,43 @@ link_file "$REPO_DIR_FILE"
 # Step 6: Start flatification
 echo "Starting flatification..."
 
-# Link specific files from docs/
-link_file "$SOURCE_DIR/docs/project_description.md"
-link_file "$SOURCE_DIR/docs/shared-vision.md"
-link_file "$SOURCE_DIR/docs/DEVELOPMENT.md"
-for file in "$SOURCE_DIR/docs/adr/"* "$SOURCE_DIR/docs/specs/"* "$SOURCE_DIR/docs/models/"*; do
+# Link documentation files
+for file in "$SOURCE_DIR/docs/project_description.md" \
+            "$SOURCE_DIR/docs/shared-vision.md" \
+            "$SOURCE_DIR/docs/DEVELOPMENT.md" \
+            "$SOURCE_DIR/docs/adr/"* \
+            "$SOURCE_DIR/docs/specs/"* \
+            "$SOURCE_DIR/docs/models/"*; do
   link_file "$file"
 done
 
-# Link internal files (excluding *_test.go)
-for file in "$SOURCE_DIR/internal/opene/"* "$SOURCE_DIR/internal/ctx/"*; do
+# Link core framework files
+for file in "$SOURCE_DIR/internal/crypto/"* \
+            "$SOURCE_DIR/internal/opene/"* \
+            "$SOURCE_DIR/internal/ctx/"* \
+            "$SOURCE_DIR/internal/buildinfo/"*; do
   [[ $file == *_test.go ]] && continue
   link_file "$file"
 done
-link_file "$SOURCE_DIR/internal/buildinfo/buildinfo.go"
 
-# Simplified logging: only log_error.go and logger.go
+# Link logging files
 link_file "$SOURCE_DIR/internal/logging/log_error.go"
 link_file "$SOURCE_DIR/internal/logging/logger.go"
 
+# Link storage files
+for file in "$SOURCE_DIR/internal/storage/store.go"* \
+            "$SOURCE_DIR/internal/storage/models/"* \
+            "$SOURCE_DIR/internal/storage/memory/"* \
+            "$SOURCE_DIR/internal/storage/testsuite/userstore/"*; do
+  [[ $file == *_test.go ]] && continue
+  link_file "$file"
+done
+
 # Link server files
-link_file "$SOURCE_DIR/internal/server/config.go"
-link_file "$SOURCE_DIR/internal/server/grpc_options.go"
-link_file "$SOURCE_DIR/internal/server/grpc_server.go"
-for file in "$SOURCE_DIR/internal/server/interceptors/"*; do
+for file in "$SOURCE_DIR/internal/server/interceptors/"* \
+            "$SOURCE_DIR/internal/server/config.go" \
+            "$SOURCE_DIR/internal/server/grpc_options.go" \
+            "$SOURCE_DIR/internal/server/grpc_server.go"; do
   [[ $file == *_test.go ]] && continue
   link_file "$file"
 done
@@ -71,27 +84,24 @@ find "$SOURCE_DIR/proto/openk" -type f -name '*.proto' | while read -r file; do
   link_file "$file"
 done
 
-# Link all cli files
-link_file "$SOURCE_DIR/cmd/openk/openk.go"
-link_file "$SOURCE_DIR/internal/cli/cli.go"
-link_file "$SOURCE_DIR/internal/app/app_context.go"
-link_file "$SOURCE_DIR/internal/app/server.go"
-for file in "$SOURCE_DIR/internal/app/client/"* "$SOURCE_DIR/internal/cli/auth/"* "$SOURCE_DIR/internal/cli/server/"*; do
+# Link CLI and client implementations
+for file in "$SOURCE_DIR/cmd/openk/openk.go" \
+            "$SOURCE_DIR/internal/app/client/"* \
+            "$SOURCE_DIR/internal/app/app_context.go" \
+            "$SOURCE_DIR/internal/app/server.go" \
+            "$SOURCE_DIR/internal/cli/cli.go" \
+            "$SOURCE_DIR/internal/cli/auth/"* \
+            "$SOURCE_DIR/internal/cli/server/"*; do
   [[ $file == *_test.go ]] && continue
   link_file "$file"
 done
 
-# Link all storage files
-for file in "$SOURCE_DIR/internal/storage/"*; do
-  [[ $file == *_test.go ]] && continue
-  link_file "$file"
-done
-
-# Link openk/makefile
+# Link build and project files
 link_file "$SOURCE_DIR/makefile"
 
-# Link all openk workfiles (openk-*)
-for file in "$SOURCE_DIR/openk-"*; do
+# Link all openk workfiles and scripts
+for file in "$SOURCE_DIR/scripts/"* \
+            "$SOURCE_DIR/openk-"*; do
   link_file "$file"
 done
 

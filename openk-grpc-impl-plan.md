@@ -3,136 +3,123 @@
 ## Current Structure ✓
 ```
 internal/
-└── server/              
-    ├── grpc_server.go   # Core server implementation ✓
-    ├── grpc_options.go  # Consolidated server options ✓
-    ├── config.go        # Server configuration ✓
-    ├── interceptors/    
-    │   ├── logging.go   # Logging interceptor ✓
-    │   └── logging_test.go  # Interceptor tests ✓
-    └── services/        # Service implementations
-        ├── auth/        # Auth service [NEXT]
-        └── health/      # Health service ✓
+├── server/              
+│   ├── grpc_server.go   # Core server implementation ✓
+│   ├── grpc_options.go  # Server options ✓
+│   ├── config.go        # Server configuration ✓
+│   ├── interceptors/    
+│   │   └── logging.go   # Logging interceptor ✓
+│   └── services/        
+│       ├── users/       # User service [NEXT]
+│       └── health/      # Health service ✓
+└── storage/             # Storage layer ✓
+    ├── models/
+    │   └── user.go               # User models ✓
+    ├── memory/
+    │   └── user_memory_store.go  # In-memory implementation ✓
+    └── store.go                  # Core interfaces ✓
 ```
 
 ## Implementation Progress
 
 ### 1. Server Core ✓
 - [x] Basic gRPC server setup
-- [x] Clean option organization
-- [x] Centralized gRPC configuration
-- [x] Proper error handling
+- [x] Option organization
+- [x] Configuration management
+- [x] Error handling
 - [x] Logging integration
 - [x] Connection management
 - [x] Graceful shutdown
 
-### 2. Server Options ✓
-- [x] Connection options (keepalive)
-- [x] Basic interceptors
-- [x] Transport placeholder
-- [ ] Expand transport options
-  - [ ] TLS configuration
-  - [ ] Message size limits
-  - [ ] Compression settings
+### 2. Proto Definitions ✓
+- [x] User service proto structure
+- [x] Common types (context, crypto, error)
+- [x] User types and messages
+- [x] Service definitions
 
-### 3. Health Service ✓
-- [x] Interface definition
-- [x] Service registration
-- [x] Health check logic
-- [x] Integration tests
-- [x] Service documentation
-- [x] Example client usage
+### 3. Storage Layer ✓
+- [x] Define store interfaces
+- [x] Create user models
+- [x] Implement thread-safe memory store
+- [x] Add proper error handling
 
-## Next Priority: Registration Flow Implementation
+## Next Priority: Storage Testing + User Service Implementation
 
-### 1. Proto Definition
-- [ ] Create auth_service_v1.proto
-  - [ ] Define RegisterRequest message
-  - [ ] Define RegisterResponse message
-  - [ ] Add field validation rules
-  - [ ] Document message fields
-- [ ] Generate proto code
-- [ ] Update buf.gen.yaml if needed
+### 1. Memory Store Testing [NEXT]
+Create memory/user_memory_store_test.go:
+- [ ] Basic operation tests
+  - [ ] Create new user
+  - [ ] Get by ID
+  - [ ] Get by username
+- [ ] Error handling tests
+  - [ ] Duplicate username
+  - [ ] User not found
+  - [ ] Invalid inputs
+- [ ] Concurrency tests
+  - [ ] Parallel creation
+  - [ ] Read/write scenarios
+  - [ ] Multiple readers
 
-### 2. Auth Service Implementation
-- [ ] Create auth_server_v1.go structure
-- [ ] Implement Register method
+### 2. User Service Implementation
+```
+services/users/
+├── users_server_v1.go       # V1 implementation
+├── users_server_v1_test.go  # Server tests
+└── users_register.go        # Service registration
+```
+
+Implementation tasks:
+- [ ] Create UsersServerV1 structure
+- [ ] Implement RegisterUser method
   - [ ] Request validation
-  - [ ] Username availability check
-  - [ ] Store key derivation params
-  - [ ] Store initial key pair
+  - [ ] Storage integration
+  - [ ] Error mapping to gRPC
+  - [ ] Success response building
+- [ ] Add registration function
+  - [ ] Version tracking
+  - [ ] Logger configuration
   - [ ] Error handling
-- [ ] Add auth_server_v1_test.go
-  - [ ] Success case tests
-  - [ ] Error case tests
-  - [ ] Edge case handling
 
-### 3. Storage Integration
-- [ ] Extend storage Backend interface
-  - [ ] Add StoreDerivationParams method
-  - [ ] Add StoreKeyPair method
-- [ ] Update in-memory implementation
-- [ ] Add storage tests for new methods
-- [ ] Implement transaction support
-- [ ] Add cleanup handling
+### 3. Service Testing
+- [ ] Unit tests with mocked storage
+- [ ] Integration tests with memory store
+- [ ] Error handling tests
+- [ ] Logging verification
+- [ ] Metrics collection
 
-### 4. Client Integration
-- [ ] Implement client-side key derivation
-- [ ] Add key pair generation
-- [ ] Create request builder
-- [ ] Add error handling
-- [ ] Add integration tests
-
-### 5. Error Handling
-- [ ] Define specific error types
-  - [ ] Username validation
-  - [ ] Key pair validation
-  - [ ] Storage errors
-- [ ] Implement error translation
-- [ ] Add error handling tests
-- [ ] Document error handling patterns
-
-## Future Server Enhancements
-
-### 1. Login Flow
-- [ ] Session management design
-- [ ] Token validation
-- [ ] Key retrieval flow
-- [ ] Error handling
-
-### 2. Transport Security
-- [ ] TLS configuration
-- [ ] Certificate management
-- [ ] Mutual TLS support
-- [ ] Security tests
-
-### 3. Additional Services
-- [ ] Secret management service
-- [ ] Key management service
-- [ ] Sync service
-- [ ] Audit service
-
-## Testing Requirements
-
-### 1. Unit Tests
-- [x] Server lifecycle
-- [x] Option building
-- [x] Health service
-- [ ] Auth service
-- [ ] Storage integration
-
-### 2. Integration Tests
-- [x] Server startup/shutdown
-- [x] Health service
-- [ ] Registration flow
-- [ ] Error scenarios
-- [ ] Storage operations
-
-### 3. Performance Tests
-- [ ] Connection handling
-- [ ] Concurrent registrations
-- [ ] Memory usage
+### 4. Metrics & Logging
+Extend existing logging interceptor:
+- [ ] User registration metrics
+- [ ] Error tracking
 - [ ] Latency measurements
+- [ ] Success/failure rates
+- [ ] Resource usage tracking
+
+## Future Enhancements
+
+### 1. Additional User Operations
+- [ ] User lookup methods
+- [ ] Profile updates
+- [ ] Key rotation support
+- [ ] Account recovery
+
+### 2. Authentication
+- [ ] Session management
+- [ ] Token validation
+- [ ] MFA support
+- [ ] OAuth integration
+
+### 3. Advanced Features
+- [ ] Batch operations
+- [ ] Stream support
+- [ ] Cache integration
+- [ ] Rate limiting
+
+### 4. Production Storage
+- [ ] PostgreSQL implementation
+- [ ] Redis caching layer
+- [ ] Migration support
+- [ ] Backup strategies
 
 ## Success Criteria
 
@@ -143,7 +130,7 @@ internal/
 - Clean shutdown
 
 ### 2. Performance
-- Acceptable latency
+- Acceptable latency (<100ms)
 - Resource efficiency
 - Connection stability
 - Proper timeout handling
@@ -151,27 +138,18 @@ internal/
 ### 3. Maintainability
 - Clear documentation
 - Consistent patterns
-- Good test coverage
+- >80% test coverage
 - Easy to extend
 
 ## Implementation Notes
-- Follow patterns established in health service
-- Maintain clear error handling
-- Focus on security first
-- Build for extensibility
+- Test storage layer thoroughly before service integration
+- Follow patterns from health service
+- Use existing error system
+- Maintain zero-knowledge architecture
+- Focus on extensibility
 
 ## Immediate Next Steps
-1. Begin proto definition for auth service
-   - Draft message structures
-   - Review with team
-   - Document fields
-
-2. Start auth service implementation
-   - Basic structure
-   - Registration method
-   - Test framework
-
-3. Plan storage integration
-   - Review interface needs
-   - Plan transaction support
-   - Design cleanup handling
+1. Create user_memory_store_test.go
+2. Implement core test cases
+3. Add concurrency tests
+4. Begin users service implementation

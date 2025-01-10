@@ -1,7 +1,7 @@
 # ADR-003: Secret Input Processing
 
 ## Status
-Proposed
+Revised (supersedes previous version)
 
 ## Context
 Following ADR-002's secret management model, we need to define how user input for secret creation and modification will be processed and validated. This includes validation rules, normalization processes, and error handling.
@@ -33,9 +33,49 @@ The system accepts input in two formats:
 project_storage:env=prod,region=us-west-2:postgres
 ```
 
-### 2. Processing Flow
+### 2. Input Types
 
-#### 2.1 Path Processing
+#### 2.1 User Identifiers
+* **Length and Format**:
+  - Maximum length: 256 characters (per RFC5321)
+  - Supports both usernames and email addresses
+  - UTF-8 encoded content
+  - No leading/trailing whitespace allowed
+  - No format restrictions at storage layer
+
+* **Validation Rules**:
+  - Must not be empty
+  - Must be within length limits
+  - Must not have leading/trailing whitespace
+  - Case-sensitive uniqueness check
+  - No cross-format uniqueness guarantees (e.g., "user@example.com" vs "user")
+
+* **Examples**:
+  ```plaintext
+  Valid identifiers:
+    user123
+    user@example.com
+    admin.user@company.co.uk
+    x                          # Single character
+    a@b.c                      # Minimum email format
+    longuser@with-subdomain.company.example.com
+
+  Invalid identifiers:
+    ""                         # Empty string
+    " user"                    # Leading whitespace
+    "user "                    # Trailing whitespace
+    "a...very...long...id"     # If exceeds 256 chars
+  ```
+
+* **Storage Requirements**:
+  - Store exact string as provided
+  - No normalization at storage layer
+  - Service layer may implement additional validation
+  - Future identifier types supported without storage changes
+
+### 3. Processing Flow
+
+#### 3.1 Path Processing
 1. **Format Detection**:
    - Detect input format (JSON or reference string)
    - Parse reference string if needed
@@ -57,7 +97,7 @@ project_storage:env=prod,region=us-west-2:postgres
      "project_app" -> "project/app"
      ```
 
-#### 2.2 Validation Stages
+#### 3.2 Validation Stages
 The system processes input in the following sequential stages:
 
 1. **Structure Validation**
@@ -174,6 +214,8 @@ The system processes input in the following sequential stages:
 * Order-independent label processing
 * Kubernetes-compatible label constraints
 * Detailed validation error messages
+* Flexible user identifier support
+* Standards-based identifier limits
 
 ### Negative
 * Single error response might require multiple request-response cycles
@@ -181,6 +223,8 @@ The system processes input in the following sequential stages:
 * Need to maintain format conversion logic
 * Additional processing overhead for reference string parsing
 * Stricter label validation may require updating existing labels
+* No format validation at storage layer for identifiers
+* Case-sensitivity might require careful handling
 
 ## Notes
 * Consider implementing bulk validation mode for multiple secrets
@@ -188,3 +232,6 @@ The system processes input in the following sequential stages:
 * Document common error scenarios and resolutions
 * Consider caching normalized paths
 * Future: Consider relaxed validation mode for migration scenarios
+* Monitor identifier patterns in production use
+* Track rejected identifier statistics
+* Document format requirements in API documentation

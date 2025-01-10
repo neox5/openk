@@ -130,7 +130,21 @@
 │   │   ├── grpc_options.go
 │   │   └── grpc_server.go
 │   └── storage
-│       └── user_storage.go
+│       ├── memory
+│       │   ├── user_memory_store.go
+│       │   ├── user_memory_store_immutability_test.go
+│       │   └── user_memory_store_test.go
+│       ├── models
+│       │   └── user.go
+│       ├── testsuite
+│       │   └── userstore
+│       │       ├── user_concurrent.go
+│       │       ├── user_create.go
+│       │       ├── user_get.go
+│       │       ├── userstore_helpers.go
+│       │       ├── userstore_suite.go
+│       │       └── userstore_test_config.go
+│       └── store.go
 ├── proto
 │   ├── openk
 │   │   ├── common
@@ -171,4 +185,4 @@
 ├── README.md
 └── repo_dir.txt
 
-48 directories, 124 files
+52 directories, 134 files
